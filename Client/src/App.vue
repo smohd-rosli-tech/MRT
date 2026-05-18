@@ -8,6 +8,8 @@ import { useSeshStore } from "stores/sesh";
 
 const seshStore = useSeshStore();
 
+console.log(seshStore.room)
+
 onMounted(() => {
   seshStore.initSocket();
 });

@@ -102,6 +102,7 @@
             icon="restart_alt"
             label="Reset Xpression Draft"
             @click="resetDraft"
+            v-if="isViewMode === '9004'"
           />
         </div>
 
@@ -210,13 +211,13 @@ import heroesRaw from '../assets/heroes_UO.json'
 import mapsRaw from '../assets/maps.json'
 
 // Change this import to your actual store path/name if different
-import { useSeshStore } from 'stores/seshStore'
+import { useSeshStore } from 'src/stores/sesh'
 
 const $q = useQuasar()
 const route = useRoute()
 const router = useRouter()
 const seshStore = useSeshStore()
-
+const isViewMode = window.location.port
 const heroes = Array.isArray(heroesRaw) ? heroesRaw : []
 const maps = Array.isArray(mapsRaw) ? mapsRaw : []
 
@@ -294,21 +295,21 @@ const DraftSlot = defineComponent({
         {
           class: [
             'draft-slot',
-            props.draftSlot.type?.toLowerCase(),
-            props.draftSlot.locked ? 'locked' : 'empty',
+            props.draftSlot?.type?.toLowerCase(),
+            props.draftSlot?.locked ? 'locked' : 'empty',
           ],
         },
         [
           h('div', { class: 'slot-top' }, [
-            h('span', props.draftSlot.slot),
-            h('span', props.draftSlot.type),
+            h('span', props.draftSlot?.slot),
+            h('span', props.draftSlot?.type),
           ]),
 
           h('div', { class: 'hero-frame' }, [
             h('img', {
               class: 'hero-img',
-              src: props.draftSlot.hero?.image || '/imgs/heroes/empty.png',
-              alt: props.draftSlot.hero?.name || 'Hero',
+              src: props.draftSlot?.hero?.image || '/imgs/heroes/empty.png',
+              alt: props.draftSlot?.hero?.name || 'Hero',
               onError: (event) => {
                 event.target.src = '/imgs/heroes/empty.png'
               },
@@ -318,13 +319,13 @@ const DraftSlot = defineComponent({
           h(
             'div',
             { class: 'hero-name' },
-            props.draftSlot.hero?.name || 'Hero 0',
+            props.draftSlot?.hero?.name || 'Hero 0',
           ),
 
           h(
             'div',
             { class: 'hero-role' },
-            props.draftSlot.hero?.role || 'Unknown',
+            props.draftSlot?.hero?.role || 'Unknown',
           ),
         ],
       )
@@ -566,7 +567,7 @@ function getCampLabel(camp) {
 }
 
 async function loadDraft() {
-  if (!currentRoomId.value) return
+  if (!currentRoomId.value || currentRoomId.value === '120001') return
 
   loading.value = true
 
@@ -629,7 +630,7 @@ function buildBlankXpressionDraft() {
 function startPolling() {
   stopPolling()
 
-  if (!currentRoomId.value) return
+  if (!currentRoomId.value || currentRoomId.value === '120001') return
 
   isPolling.value = true
 
@@ -663,7 +664,7 @@ watch(
 )
 
 onMounted(() => {
-  if (currentRoomId.value) {
+  if (currentRoomId.value !== '120001') {
     startPolling()
   }
 })
@@ -771,12 +772,12 @@ onBeforeUnmount(() => {
 
 .slot-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(90px, 1fr));
+  grid-template-columns: repeat(2, minmax(90px, 1fr));
   gap: 10px;
 }
 
 .slot-grid.bans {
-  grid-template-columns: repeat(3, minmax(70px, 1fr));
+  grid-template-columns: repeat(2, minmax(70px, 1fr));
 }
 
 .center-panel {

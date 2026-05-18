@@ -6,11 +6,13 @@
           <q-img src="/MR-logo.png" style="width: 110px; height: 40px" />
         </q-btn>
 
-        <q-btn stretch flat label="Team" @click="navigate('/team')"/>
+        <q-btn stretch flat label="Team" @click="navigate('/team')" v-if="isViewMode !== '9008'"/>
 
         <q-btn stretch flat label="Room" @click="navigate('/room')" v-if="isViewMode === '9004'"/>
 
-        <q-btn stretch flat label="Live" @click="navigate('/live/dashboard')"/>
+        <q-btn stretch flat label="Live" @click="navigate('/live/draft')" v-if="isViewMode !== '9008'"/>
+
+        <q-btn stretch flat label="Live" @click="navigate('/live/dashboard')" v-if="isViewMode !== '9008'"/>
 
         <q-btn stretch flat label="Test" @click="navigate('/test')" v-if="isViewMode === '9004'"/>
 

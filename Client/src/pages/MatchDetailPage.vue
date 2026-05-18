@@ -68,7 +68,7 @@
       </div>
 
       <div v-if="activeTab === 'stats'">
-        <q-btn color="light-blue-10" icon="send" label="Send to Xpression" @click="sendToXpression" class="q-mb-sm q-ml-sm" />
+        <q-btn color="light-blue-10" icon="send" label="Send to Xpression" @click="sendToXpression" class="q-mb-sm q-ml-sm" v-if="isViewMode !== '9008'"/>
 
         <div class="table-title-row">
           <div class="table-title">{{ dashboard.teams.team1.name }}</div>
@@ -206,8 +206,9 @@
       </div>
 
       <div v-if="activeTab === 'banpick'" class="banpick-wrap">
-        <q-btn color="green" icon="loop" label="Start Loop" @click="startLoop" class="q-mb-sm q-ml-sm" />
-        <q-btn color="red" icon="close" label="Stop Loop" @click="stopLoop" class="q-mb-sm q-ml-sm" />
+        <q-btn color="green" icon="loop" label="Start Loop" @click="startLoop" class="q-mb-sm q-ml-sm" v-if="isViewMode !== '9008'"/>
+        <q-btn color="red" icon="close" label="Stop Loop" @click="stopLoop" class="q-mb-sm q-ml-sm" v-if="isViewMode !== '9008'" />
+        <q-btn color="blue-light-8" icon="close" label="Reset Loop" @click="resetLoop" class="q-mb-sm q-ml-sm" v-if="isViewMode === '9004'" />
 
         <table class="banpick-table">
           <thead>
@@ -255,7 +256,7 @@ import mapsRaw from '../assets/maps.json'
 const $q = useQuasar()
 const route = useRoute()
 const router = useRouter()
-
+const isViewMode = window.location.port
 const loading = ref(false)
 const rawMatch = ref(null)
 const activeTab = ref('stats')
@@ -568,6 +569,9 @@ async function stopLoop() {
   await api.post('/xpression/draft/loop/stop')
 }
 
+async function resetLoop() {
+  await api.post('/xpression/draft/loop/reset')
+}
 // function formatDuration(seconds) {
 //   const total = Math.floor(Number(seconds || 0))
 //   const min = Math.floor(total / 60)

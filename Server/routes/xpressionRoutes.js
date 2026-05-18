@@ -90,8 +90,8 @@ function getMapMeta(mapId) {
 
   return {
     id: Number(mapId || 0),
-    name: map.sub_name || map.full_name || map.name || `Map ${mapId || 0}`,
-    mode: map.game_mode || "",
+    name: (map.sub_name || map.full_name || map.name || `Map ${mapId || 0}`).toUpperCase(),
+    mode: (map.game_mode || "").toUpperCase(),
   };
 }
 
@@ -599,6 +599,8 @@ router.post("/draft/loop/start", async (req, res) => {
       phaseStartedAt = Date.now();
       currentDraftPayload = buildDraft(lastDraftData, {}, false);
     }, Number(interval));
+
+    console.log(`🚀 Draft loop started for match ${match_uid} with interval ${interval}ms`);
 
     res.json({
       success: true,

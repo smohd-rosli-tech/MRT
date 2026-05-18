@@ -1,302 +1,643 @@
 <template>
-  <div class="draft-page dark">
-    <div class="draft-header">
-      <div class="team-panel team1">
-        <div class="team-label">Camp 1</div>
-        <div class="team-name">{{ teamName(1) }}</div>
-      </div>
-
-      <div class="draft-center-card">
-        <div class="eyebrow">Marvel Rivals Draft</div>
-        <h1>Ban / Pick Phase</h1>
-
-        <div class="room-row">
-          <span><strong>Room:</strong> {{ roomId }}</span>
-          <span><strong>Steps:</strong> {{ draftRows.length }}</span>
-          <span><strong>Updated:</strong> {{ updatedTime }}</span>
-        </div>
-
-        <div class="phase-status" :class="currentPhaseClass">
-          <span class="pulse-dot" />
-          <span>{{ currentPhaseLabel }}</span>
-        </div>
-
-        <div class="timer-grid">
-          <div>
-            <small>Pre Draft</small>
-            <strong>{{ formatTimer(timeInfo.pre_ban_pick_time_limit) }}</strong>
-          </div>
-          <div>
-            <small>Current Timer</small>
-            <strong>{{ formatTimer(timeInfo.ban_pick_time_limit) }}</strong>
-          </div>
-          <div>
-            <small>Announce</small>
-            <strong>{{ formatTimer(timeInfo.ban_pick_announce_time_limit) }}</strong>
-          </div>
+  <q-page class="draft-page q-pa-md">
+    <div class="page-header q-mb-md">
+      <div>
+        <div class="text-h4 text-weight-bold">Live Draft</div>
+        <div class="text-caption text-grey-5">
+          Active Room:
+          <span class="text-white text-weight-bold">
+            {{ currentRoomId || 'No active room selected' }}
+          </span>
         </div>
       </div>
 
-      <div class="team-panel team2">
-        <div class="team-label">Camp 2</div>
-        <div class="team-name">{{ teamName(2) }}</div>
+      <div class="row items-center q-gutter-sm">
+        <q-badge
+          :color="isPolling ? 'positive' : 'grey-7'"
+          :label="isPolling ? 'POLLING' : 'STOPPED'"
+        />
+
+        <q-btn
+          color="primary"
+          icon="refresh"
+          label="Refresh"
+          :disable="!currentRoomId"
+          :loading="loading"
+          @click="loadDraft"
+        />
+
+        <q-btn
+          color="grey-8"
+          icon="arrow_back"
+          label="Back"
+          @click="router.back()"
+        />
       </div>
     </div>
 
-    <div class="control-row">
-      <q-input
-        v-model="manualRoomId"
-        dense
+    <q-card flat bordered class="status-card q-mb-md">
+      <q-card-section>
+        <div class="status-grid">
+          <div>
+            <div class="status-label">Current Round</div>
+            <div class="status-value">
+              {{ xpressionDraft?.meta?.current_round ?? '-' }}
+            </div>
+          </div>
+
+          <div>
+            <div class="status-label">Phase</div>
+            <div class="status-value">
+              {{ xpressionDraft?.meta?.phase || '-' }}
+            </div>
+          </div>
+
+          <div>
+            <div class="status-label">Active Camp</div>
+            <div class="status-value">
+              {{ getCampLabel(xpressionDraft?.meta?.active_camp) }}
+            </div>
+          </div>
+
+          <div>
+            <div class="status-label">Completed</div>
+            <div class="status-value">
+              {{ xpressionDraft?.meta?.completed_steps || 0 }}
+              /
+              {{ xpressionDraft?.meta?.total_steps || 12 }}
+            </div>
+          </div>
+
+          <div>
+            <div class="status-label">Timer</div>
+            <div class="status-value">
+              {{ xpressionDraft?.Timer?.remaining ?? 20 }}s
+            </div>
+          </div>
+
+          <div>
+            <div class="status-label">Last Updated</div>
+            <div class="status-value small">
+              {{ lastUpdatedLabel }}
+            </div>
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
+
+    <q-card flat bordered class="draft-card q-mb-md">
+      <q-card-section>
+        <div class="draft-header q-mb-md">
+          <div>
+            <div class="text-h6 text-weight-bold">Draft Slots</div>
+            <div class="text-caption text-grey-5">
+              Always returns 12 slots for Xpression
+            </div>
+          </div>
+
+          <q-btn
+            dense
+            outline
+            color="negative"
+            icon="restart_alt"
+            label="Reset Xpression Draft"
+            @click="resetDraft"
+          />
+        </div>
+
+        <div class="draft-layout">
+          <div class="team-panel blue-panel">
+            <div class="team-title">BLUE</div>
+
+            <div class="phase-section">
+              <div class="phase-title">Picks</div>
+
+              <div class="slot-grid">
+                <DraftSlot
+                  v-for="slot in bluePicks"
+                  :key="`blue-pick-${slot.round}-${slot.slot}`"
+                  :draft-slot="draftSlot"
+                />
+              </div>
+            </div>
+
+            <div class="phase-section">
+              <div class="phase-title">Bans</div>
+
+              <div class="slot-grid bans">
+                <DraftSlot
+                  v-for="slot in blueBans"
+                  :key="`blue-ban-${slot.round}-${slot.slot}`"
+                  :draft-slot="draftSlot"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="center-panel">
+            <div class="map-box">
+              <div class="map-label">Map</div>
+              <div class="map-name">
+                {{ xpressionDraft?.Map?.name || '-' }}
+              </div>
+              <div class="map-mode">
+                {{ xpressionDraft?.Map?.mode || '-' }}
+              </div>
+            </div>
+
+            <div class="current-box">
+              <div class="map-label">Current</div>
+              <div class="current-phase">
+                {{ xpressionDraft?.meta?.phase || '-' }}
+              </div>
+              <div class="current-camp">
+                {{ getCampLabel(xpressionDraft?.meta?.active_camp) }}
+              </div>
+            </div>
+          </div>
+
+          <div class="team-panel red-panel">
+            <div class="team-title">RED</div>
+
+            <div class="phase-section">
+              <div class="phase-title">Picks</div>
+
+              <div class="slot-grid">
+                <DraftSlot
+                  v-for="slot in redPicks"
+                  :key="`red-pick-${slot.round}-${slot.slot}`"
+                  :draft-slot="slot"
+                />
+              </div>
+            </div>
+
+            <div class="phase-section">
+              <div class="phase-title">Bans</div>
+
+              <div class="slot-grid bans">
+                <DraftSlot
+                  v-for="slot in redBans"
+                  :key="`red-ban-${slot.round}-${slot.slot}`"
+                  :draft-slot="slot"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
+
+    <q-card flat bordered class="raw-card">
+      <q-expansion-item
         dark
-        outlined
-        label="Room ID"
-        class="room-input"
-        @keyup.enter="applyRoomId"
-      />
-
-      <q-btn dense color="primary" label="Load" :loading="loading" @click="applyRoomId" />
-      <q-btn
         dense
-        :color="isPolling ? 'negative' : 'positive'"
-        :label="isPolling ? 'Stop Polling' : 'Start Polling'"
-        @click="isPolling ? stopPolling() : startPolling()"
-      />
-    </div>
-
-    <div v-if="errorMessage" class="error-box">
-      {{ errorMessage }}
-    </div>
-
-    <section class="main-board">
-      <div class="board-title-row">
-        <h2>Draft Timeline</h2>
-        <span>{{ completedCount }} completed / {{ expectedDraftLength }} expected</span>
-      </div>
-
-      <div class="draft-track">
-        <div
-          v-for="step in timelineSteps"
-          :key="step.key"
-          class="draft-card"
-          :class="[
-            step.actionClass,
-            step.campClass,
-            { empty: !step.heroId, active: step.isActive }
-          ]"
-        >
-          <div class="draft-card-top">
-            <span>{{ step.roundLabel }}</span>
-            <strong>{{ step.actionLabel }}</strong>
-          </div>
-
-          <div class="hero-preview">
-            <img
-              :src="heroImage(step.heroId)"
-              :alt="heroLabel(step)"
-              @error="e => (e.target.src = '/imgs/heroes/0_unknown.png')"
-            />
-          </div>
-
-          <div class="hero-name">{{ heroLabel(step) }}</div>
-          <div class="camp-pill" :class="step.campClass">{{ step.campLabel }}</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="main-board draft-table-board">
-      <div class="board-title-row">
-        <h2>Round View</h2>
-        <span>Grouped by round index</span>
-      </div>
-
-      <div class="table-wrap">
-        <table class="draft-table">
-          <thead>
-            <tr>
-              <th>Round</th>
-              <th>Action</th>
-              <th>Camp 1</th>
-              <th>Camp 2</th>
-              <th>Mode Order</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr v-for="round in groupedRounds" :key="round.roundIndex">
-              <td>Round {{ round.roundIndex + 1 }}</td>
-              <td>
-                <span class="action-chip" :class="round.actionClass">
-                  {{ round.actionLabel }}
-                </span>
-              </td>
-              <td>
-                <DraftCell :step="round.camp1" />
-              </td>
-              <td>
-                <DraftCell :step="round.camp2" />
-              </td>
-              <td>{{ round.modeOrderLabel }}</td>
-            </tr>
-
-            <tr v-if="!groupedRounds.length">
-              <td colspan="5" class="empty-state">
-                No draft data yet. Enter a room ID and load `/realtime_ban_pick`.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+        icon="data_object"
+        label="Debug / Xpression Draft Payload"
+      >
+        <pre>{{ JSON.stringify(xpressionDraft, null, 2) }}</pre>
+      </q-expansion-item>
+    </q-card>
+  </q-page>
 </template>
 
 <script setup>
 import { computed, defineComponent, h, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useQuasar } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from 'boot/axios'
-import { useSeshStore } from 'src/stores/sesh'
 
+import heroesRaw from '../assets/heroes_UO.json'
+import mapsRaw from '../assets/maps.json'
+
+// Change this import to your actual store path/name if different
+import { useSeshStore } from 'stores/seshStore'
+
+const $q = useQuasar()
 const route = useRoute()
 const router = useRouter()
 const seshStore = useSeshStore()
 
+const heroes = Array.isArray(heroesRaw) ? heroesRaw : []
+const maps = Array.isArray(mapsRaw) ? mapsRaw : []
+
+const heroMap = Object.fromEntries(
+  heroes.map((hero) => [Number(hero.id), hero])
+)
+
+const mapMap = Object.fromEntries(
+  maps.map((map) => [Number(map.id), map])
+)
+
+const HERO_IMAGE_ALIASES = {
+  10571: 1057,
+  10572: 1057,
+  10573: 1057,
+}
+
 const loading = ref(false)
 const isPolling = ref(false)
+const rawRealtimeDraft = ref(null)
+const xpressionDraft = ref(buildBlankXpressionDraft())
+const lastUpdatedAt = ref(null)
 const pollTimer = ref(null)
-const errorMessage = ref('')
-const updatedAt = ref(null)
 
-const manualRoomId = ref(String(route.query?.roomId || seshStore.room || ''))
-const currentRoomId = ref(String(route.query?.roomId || seshStore.room || ''))
-
-const rawDraft = ref([])
-const timeInfo = ref({
-  pre_ban_pick_time_limit: null,
-  ban_pick_time_limit: null,
-  ban_pick_announce_time_limit: null,
+const currentRoomId = computed(() => {
+  return String(seshStore.room || route.query?.roomId || '')
 })
 
-const teams = ref({
-  1: { name: 'Camp 1', miniName: 'C1' },
-  2: { name: 'Camp 2', miniName: 'C2' },
+const lastUpdatedLabel = computed(() => {
+  if (!lastUpdatedAt.value) return '-'
+
+  return new Date(lastUpdatedAt.value).toLocaleTimeString()
 })
 
-const roomId = computed(() => currentRoomId.value || '-')
-const updatedTime = computed(() => {
-  if (!updatedAt.value) return '-'
-  return new Date(updatedAt.value).toLocaleTimeString()
+const draftSlots = computed(() => {
+  return xpressionDraft.value?.Draft || []
 })
 
-const expectedDraftLength = computed(() => Math.max(12, rawDraft.value.length))
-const completedCount = computed(() => rawDraft.value.filter(item => Number(item?.hero_id || 0) > 0).length)
-
-const draftRows = computed(() => {
-  return [...rawDraft.value]
-    .map((item, index) => normalizeDraftStep(item, index))
-    .sort((a, b) => {
-      if (a.roundIndex !== b.roundIndex) return a.roundIndex - b.roundIndex
-      if (a.camp !== b.camp) return a.camp - b.camp
-      return a.originalIndex - b.originalIndex
-    })
+const bluePicks = computed(() => {
+  return draftSlots.value.filter(
+    (slot) => Number(slot.camp) === 1 && slot.type === 'PICK',
+  )
 })
 
-const timelineSteps = computed(() => {
-  if (!draftRows.value.length) return buildPlaceholderSteps()
+const blueBans = computed(() => {
+  return draftSlots.value.filter(
+    (slot) => Number(slot.camp) === 1 && slot.type === 'BAN',
+  )
+})
 
-  const rows = draftRows.value.map((step, index) => ({
-    ...step,
-    isActive: index === completedCount.value,
-  }))
+const redPicks = computed(() => {
+  return draftSlots.value.filter(
+    (slot) => Number(slot.camp) === 2 && slot.type === 'PICK',
+  )
+})
 
-  while (rows.length < expectedDraftLength.value) {
-    const index = rows.length
-    rows.push({
-      key: `placeholder-${index}`,
-      roundIndex: index,
-      roundLabel: `Round ${index + 1}`,
-      actionLabel: 'WAITING',
-      actionClass: 'waiting',
-      camp: null,
-      campLabel: 'TBD',
-      campClass: 'neutral',
-      heroId: null,
-      heroName: '',
-      isActive: index === completedCount.value,
-    })
+const redBans = computed(() => {
+  return draftSlots.value.filter(
+    (slot) => Number(slot.camp) === 2 && slot.type === 'BAN',
+  )
+})
+
+const DraftSlot = defineComponent({
+  name: 'DraftSlot',
+  props: {
+    draftSlot: {
+      type: Object,
+      required: true,
+    },
+  },
+  setup(props) {
+    return () =>
+      h(
+        'div',
+        {
+          class: [
+            'draft-slot',
+            props.draftSlot.type?.toLowerCase(),
+            props.draftSlot.locked ? 'locked' : 'empty',
+          ],
+        },
+        [
+          h('div', { class: 'slot-top' }, [
+            h('span', props.draftSlot.slot),
+            h('span', props.draftSlot.type),
+          ]),
+
+          h('div', { class: 'hero-frame' }, [
+            h('img', {
+              class: 'hero-img',
+              src: props.draftSlot.hero?.image || '/imgs/heroes/empty.png',
+              alt: props.draftSlot.hero?.name || 'Hero',
+              onError: (event) => {
+                event.target.src = '/imgs/heroes/empty.png'
+              },
+            }),
+          ]),
+
+          h(
+            'div',
+            { class: 'hero-name' },
+            props.draftSlot.hero?.name || 'Hero 0',
+          ),
+
+          h(
+            'div',
+            { class: 'hero-role' },
+            props.draftSlot.hero?.role || 'Unknown',
+          ),
+        ],
+      )
+  },
+})
+function normalizeHeroName(name = '') {
+  return String(name)
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/\b\w/g, (s) => s.toUpperCase())
+}
+
+function toHeroFileName(name = '') {
+  return String(name)
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^\w-]/g, '')
+}
+
+function getHeroBaseId(heroId) {
+  const id = Number(heroId)
+
+  if (id === 10571 || id === 10572 || id === 10573) {
+    return 1057
   }
 
-  return rows
-})
+  return id
+}
 
-const groupedRounds = computed(() => {
-  const groups = new Map()
+function getHeroRole(heroId) {
+  const id = Number(heroId)
 
-  for (const step of draftRows.value) {
-    if (!groups.has(step.roundIndex)) {
-      groups.set(step.roundIndex, {
-        roundIndex: step.roundIndex,
-        actionLabel: step.actionLabel,
-        actionClass: step.actionClass,
-        modeOrderLabel: modeOrderLabel(step.modeOrderType),
-        camp1: null,
-        camp2: null,
-      })
+  if (!id) return 'Unknown'
+
+  const baseId = getHeroBaseId(id)
+  const hero = heroMap[baseId]
+
+  if (!hero) return 'Unknown'
+
+  if (id === 10571 && Array.isArray(hero.role)) return hero.role[0] || 'Duelist'
+  if (id === 10572 && Array.isArray(hero.role)) return hero.role[1] || 'Vanguard'
+  if (id === 10573 && Array.isArray(hero.role)) return hero.role[2] || 'Strategist'
+
+  if (Array.isArray(hero.role)) return hero.role[0] || 'Unknown'
+
+  return hero.role || 'Unknown'
+}
+
+function getHeroMeta(heroId) {
+  const id = Number(heroId || 0)
+
+  if (!id) {
+    return {
+      id: 0,
+      name: 'Hero 0',
+      role: 'Unknown',
+      image: '/imgs/heroes/empty.png',
     }
-
-    const group = groups.get(step.roundIndex)
-    group.actionLabel = mergeActionLabel(group.actionLabel, step.actionLabel)
-    group.actionClass = group.actionLabel.includes('PICK') ? 'pick' : 'ban'
-    group.modeOrderLabel = modeOrderLabel(step.modeOrderType)
-
-    if (step.camp === 1) group.camp1 = step
-    if (step.camp === 2) group.camp2 = step
   }
 
-  return [...groups.values()].sort((a, b) => a.roundIndex - b.roundIndex)
-})
+  const imageHeroId = HERO_IMAGE_ALIASES[id] || id
+  const hero = heroMap[id] || heroMap[imageHeroId]
 
-const currentPhaseLabel = computed(() => {
-  const active = timelineSteps.value.find(step => step.isActive)
-  if (!active || active.actionClass === 'waiting') return 'Waiting for next draft action'
-  return `${active.actionLabel} · ${active.campLabel}`
-})
+  const name = normalizeHeroName(hero?.name || `Hero ${id}`)
 
-const currentPhaseClass = computed(() => {
-  const active = timelineSteps.value.find(step => step.isActive)
-  return active?.actionClass || 'waiting'
-})
+  return {
+    id,
+    name,
+    role: getHeroRole(id),
+    image: `/imgs/heroes/${imageHeroId}_${toHeroFileName(name)}.png`,
+  }
+}
+
+function getMapMeta(mapId) {
+  const id = Number(mapId || 0)
+  const map = mapMap[id] || {}
+
+  return {
+    id,
+    name: map.sub_name || map.full_name || map.name || `Map ${id || 0}`,
+    mode: map.game_mode || '',
+  }
+}
+
+function buildDraftPlan() {
+  const first = 2
+  const second = 1
+
+  return {
+    rounds: [
+      { round_index: 0, phase: 'BAN', camp: 'BOTH' },
+
+      { round_index: 1, phase: 'PICK', camp: first },
+      { round_index: 2, phase: 'BAN', camp: second },
+      { round_index: 3, phase: 'PICK', camp: second },
+      { round_index: 4, phase: 'BAN', camp: first },
+
+      { round_index: 5, phase: 'BAN', camp: 'BOTH' },
+
+      { round_index: 6, phase: 'PICK', camp: second },
+      { round_index: 7, phase: 'BAN', camp: first },
+      { round_index: 8, phase: 'PICK', camp: first },
+      { round_index: 9, phase: 'BAN', camp: second },
+    ],
+  }
+}
+
+function buildEmptyDraftSkeleton() {
+  const plan = buildDraftPlan()
+  const slotCounter = {
+    1: 0,
+    2: 0,
+  }
+
+  return plan.rounds.flatMap((round) => {
+    const camps = round.camp === 'BOTH' ? [1, 2] : [Number(round.camp)]
+
+    return camps.map((camp) => {
+      slotCounter[camp] += 1
+
+      return {
+        round: Number(round.round_index),
+        type: round.phase,
+        camp,
+        slot: camp === 1 ? `Blue ${slotCounter[camp]}` : `Red ${slotCounter[camp]}`,
+        hero: getHeroMeta(0),
+        locked: false,
+      }
+    })
+  })
+}
+
+function getDraftMeta(slots = []) {
+  const next = slots.find((slot) => !slot.locked)
+
+  if (!next) {
+    return {
+      current_round: 10,
+      phase: 'END',
+      active_camp: null,
+      is_complete: true,
+      completed_steps: slots.length,
+      total_steps: slots.length,
+    }
+  }
+
+  return {
+    current_round: next.round,
+    phase: next.type,
+    active_camp: next.camp,
+    is_complete: false,
+    completed_steps: slots.filter((slot) => slot.locked).length,
+    total_steps: slots.length,
+  }
+}
+
+function getDraftTimer(raw = {}) {
+  const data = raw?.data || raw || {}
+
+  const remaining =
+    Number(data.ban_pick_time_limit) >= 0
+      ? Math.ceil(Number(data.ban_pick_time_limit))
+      : 20
+
+  return {
+    phase_seconds: 20,
+    remaining,
+  }
+}
+
+function normalizeRealtimeDraft(raw = {}) {
+  const data = raw?.data || raw || {}
+
+  const histories = Array.isArray(data.suggest_histories)
+    ? data.suggest_histories
+    : []
+
+  return histories
+    .filter((item) => Number(item.suggest_hero) > 0)
+    .map((item) => ({
+      round_index: Number(item.round_index),
+      operate_type: Number(item.operate_type),
+      camp: Number(item.camp),
+      battle_side: Number(item.battle_side ?? 0),
+      hero_id: Number(item.suggest_hero),
+    }))
+}
+
+function buildDraftFromRealtime(raw = {}) {
+  const data = raw?.data || raw || {}
+  const slots = buildEmptyDraftSkeleton()
+  const histories = normalizeRealtimeDraft(raw)
+
+  histories.forEach((item, index) => {
+    if (!slots[index]) return
+
+    const heroId = Number(item.hero_id || 0)
+
+    slots[index] = {
+      ...slots[index],
+      round: Number(item.round_index ?? slots[index].round),
+      type: Number(item.operate_type) === 1 ? 'PICK' : 'BAN',
+      camp: Number(item.camp || slots[index].camp),
+      hero: getHeroMeta(heroId),
+      locked: heroId > 0,
+    }
+  })
+
+  const currentInfo = Array.isArray(data.cur_round_banpick_info)
+    ? data.cur_round_banpick_info
+    : []
+
+  const current = currentInfo.map((item) => {
+    const heroId = Number(item.cur_pick_hero || 0)
+
+    return {
+      round: Number(item.round_index ?? -1),
+      type: Number(item.operate_type) === 1 ? 'PICK' : 'BAN',
+      camp: Number(item.camp || 0),
+      battle_side: Number(item.battle_side ?? 0),
+      hero: getHeroMeta(heroId),
+    }
+  })
+
+  return {
+    Map: getMapMeta(data.map_id || 0),
+    Timer: getDraftTimer(raw),
+    Draft: slots,
+    Current: current,
+    meta: getDraftMeta(slots),
+  }
+}
+
+function getCampLabel(camp) {
+  if (Number(camp) === 1) return 'Blue'
+  if (Number(camp) === 2) return 'Red'
+  if (camp === 'BOTH') return 'Both'
+  return '-'
+}
 
 async function loadDraft() {
-  if (!currentRoomId.value && currentRoomId.value !== '120001') return
+  if (!currentRoomId.value) return
+
+  loading.value = true
 
   try {
-    loading.value = true
-    errorMessage.value = ''
+    const response = await api.get(`/live/ban-pick/${currentRoomId.value}`)
 
-    const response = await api.get(`/realtime_ban_pick/${currentRoomId.value}`)
-    const payload = response?.data?.data ?? response?.data ?? {}
+    rawRealtimeDraft.value = response.data
 
-    rawDraft.value = extractBanPickInfo(payload)
-    timeInfo.value = {
-      ...timeInfo.value,
-      ...(payload?.ban_pick_time_info || payload?.timeInfo || {}),
-    }
+    const built = buildDraftFromRealtime(response.data)
 
-    teams.value = extractTeams(payload)
-    updatedAt.value = new Date().toISOString()
+    xpressionDraft.value = built
+    lastUpdatedAt.value = Date.now()
+
   } catch (err) {
     console.error('Failed to load draft:', err)
-    errorMessage.value = err?.response?.data?.message || err?.message || 'Failed to load realtime ban/pick data.'
+
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to load draft',
+    })
   } finally {
     loading.value = false
   }
 }
 
+async function resetDraft() {
+  try {
+    const response = await api.get('/xpression/draft/reset')
+    xpressionDraft.value = response.data?.data || buildBlankXpressionDraft()
+
+    $q.notify({
+      type: 'positive',
+      message: 'Xpression draft reset',
+    })
+  } catch (err) {
+    console.error('Failed to reset draft:', err)
+
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to reset Xpression draft',
+    })
+  }
+}
+
+function buildBlankXpressionDraft() {
+  const Draft = buildEmptyDraftSkeleton()
+
+  return {
+    Map: {},
+    Timer: {
+      phase_seconds: 20,
+      remaining: 20,
+    },
+    Draft,
+    Current: [],
+    meta: getDraftMeta(Draft),
+  }
+}
+
 function startPolling() {
   stopPolling()
+
+  if (!currentRoomId.value) return
+
   isPolling.value = true
+
   loadDraft()
-  pollTimer.value = setInterval(loadDraft, 500)
+
+  pollTimer.value = setInterval(() => {
+    loadDraft()
+  }, 500)
 }
 
 function stopPolling() {
@@ -304,171 +645,27 @@ function stopPolling() {
     clearInterval(pollTimer.value)
     pollTimer.value = null
   }
+
   isPolling.value = false
 }
 
-function applyRoomId() {
-  const nextRoomId = String(manualRoomId.value || '').trim()
-  if (!nextRoomId) return
-
-  currentRoomId.value = nextRoomId
-  router.replace({ query: { ...route.query, roomId: nextRoomId } })
-  loadDraft()
-}
-
-function extractBanPickInfo(payload) {
-  if (Array.isArray(payload)) return payload
-  if (Array.isArray(payload?.ban_pick_info)) return payload.ban_pick_info
-  if (Array.isArray(payload?.data?.ban_pick_info)) return payload.data.ban_pick_info
-  if (Array.isArray(payload?.Draft)) return payload.Draft
-  if (Array.isArray(payload?.draft)) return payload.draft
-  return []
-}
-
-function extractTeams(payload) {
-  const groupInfo = payload?.group_info || payload?.room?.group_info || payload?.meta?.group_info
-
-  if (groupInfo) {
-    return {
-      1: {
-        name: groupInfo?.['1']?.name || 'Camp 1',
-        miniName: groupInfo?.['1']?.mini_name || groupInfo?.['1']?.miniName || 'C1',
-      },
-      2: {
-        name: groupInfo?.['2']?.name || 'Camp 2',
-        miniName: groupInfo?.['2']?.mini_name || groupInfo?.['2']?.miniName || 'C2',
-      },
-    }
-  }
-
-  return {
-    1: { name: payload?.meta?.team1Name || 'Camp 1', miniName: payload?.meta?.team1MiniName || 'C1' },
-    2: { name: payload?.meta?.team2Name || 'Camp 2', miniName: payload?.meta?.team2MiniName || 'C2' },
-  }
-}
-
-function normalizeDraftStep(item, index) {
-  const roundIndex = Number(item.round_index ?? item.round ?? item.roundIndex ?? index)
-  const operateType = Number(item.operate_type ?? item.type ?? -1)
-  const camp = Number(item.camp ?? item.battle_side ?? 0)
-  const heroId = item.hero_id ?? item.heroId ?? null
-  const actionLabel = operateType === 0 ? 'BAN' : operateType === 1 ? 'PICK' : 'WAITING'
-  const actionClass = operateType === 0 ? 'ban' : operateType === 1 ? 'pick' : 'waiting'
-
-  return {
-    ...item,
-    key: `${roundIndex}-${camp}-${heroId || 'empty'}-${index}`,
-    originalIndex: index,
-    roundIndex,
-    roundLabel: `Round ${roundIndex + 1}`,
-    operateType,
-    actionLabel,
-    actionClass,
-    camp,
-    campLabel: camp === 1 ? teamName(1) : camp === 2 ? teamName(2) : 'Neutral',
-    campClass: camp === 1 ? 'team1' : camp === 2 ? 'team2' : 'neutral',
-    heroId,
-    heroName: item.hero_name || item.heroName || '',
-    modeOrderType: item.mode_order_type,
-  }
-}
-
-function buildPlaceholderSteps() {
-  return Array.from({ length: 12 }, (_, index) => ({
-    key: `placeholder-${index}`,
-    roundIndex: index,
-    roundLabel: `Round ${index + 1}`,
-    actionLabel: 'WAITING',
-    actionClass: 'waiting',
-    camp: null,
-    campLabel: 'TBD',
-    campClass: 'neutral',
-    heroId: null,
-    heroName: '',
-    isActive: index === 0,
-  }))
-}
-
-function teamName(camp) {
-  return teams.value?.[camp]?.miniName || teams.value?.[camp]?.name || `Camp ${camp}`
-}
-
-function heroLabel(step) {
-  if (!step?.heroId) return 'Waiting'
-  return step.heroName || `Hero ${step.heroId}`
-}
-
-function heroImage(heroId) {
-  if (!heroId) return '/imgs/heroes/0_unknown.png'
-  return `/imgs/heroes/${heroId}.png`
-}
-
-function modeOrderLabel(value) {
-  if (Number(value) === 1) return 'Simultaneous'
-  if (Number(value) === 0) return 'Sequential'
-  return '-'
-}
-
-function mergeActionLabel(a, b) {
-  if (a === b) return a
-  if ([a, b].includes('PICK')) return 'PICK / BAN'
-  return a || b || '-'
-}
-
-function formatTimer(value) {
-  const num = Number(value)
-  if (!Number.isFinite(num)) return '-'
-  if (num < 0) return 'Ended'
-
-  const total = Math.ceil(num)
-  const minutes = Math.floor(total / 60)
-  const seconds = total % 60
-  return `${minutes}:${String(seconds).padStart(2, '0')}`
-}
-
-const DraftCell = defineComponent({
-  name: 'DraftCell',
-  props: {
-    step: {
-      type: Object,
-      default: null,
-    },
-  },
-  setup(props) {
-    return () => {
-      if (!props.step) {
-        return h('div', { class: 'draft-cell empty-cell' }, '-')
-      }
-
-      return h('div', { class: 'draft-cell' }, [
-        h('img', {
-          src: heroImage(props.step.heroId),
-          alt: heroLabel(props.step),
-          onError: event => {
-            event.target.src = '/imgs/heroes/0_unknown.png'
-          },
-        }),
-        h('div', { class: 'draft-cell-text' }, [
-          h('strong', heroLabel(props.step)),
-          h('span', `ID ${props.step.heroId || '-'}`),
-        ]),
-      ])
-    }
-  },
-})
-
 watch(
-  () => route.query.roomId,
-  value => {
-    if (!value) return
-    manualRoomId.value = String(value)
-    currentRoomId.value = String(value)
-    loadDraft()
-  }
+  currentRoomId,
+  (roomId) => {
+    if (roomId) {
+      startPolling()
+    } else {
+      stopPolling()
+      xpressionDraft.value = buildBlankXpressionDraft()
+    }
+  },
+  { immediate: true },
 )
 
 onMounted(() => {
-  if (currentRoomId.value !== '120001') startPolling()
+  if (currentRoomId.value) {
+    startPolling()
+  }
 })
 
 onBeforeUnmount(() => {
@@ -477,365 +674,234 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.draft-page.dark {
+.draft-page {
   min-height: 100vh;
-  background: #0b0f14;
-  color: #e5e7eb;
-  padding: 20px;
+  background: #111827;
+  color: white;
 }
 
-.draft-header {
-  display: grid;
-  grid-template-columns: 180px 1fr 180px;
-  gap: 16px;
-  align-items: stretch;
-}
-
-.team-panel,
-.draft-center-card,
-.main-board {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(15, 23, 42, 0.86);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
-}
-
-.team-panel {
-  border-radius: 18px;
+.page-header {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 150px;
-}
-
-.team-panel.team1 {
-  border-color: rgba(59, 130, 246, 0.45);
-}
-
-.team-panel.team2 {
-  border-color: rgba(239, 68, 68, 0.45);
-}
-
-.team-label,
-.eyebrow {
-  color: #94a3b8;
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.team-name {
-  margin-top: 8px;
-  font-size: 36px;
-  font-weight: 900;
-}
-
-.draft-center-card {
-  border-radius: 22px;
-  padding: 18px 24px;
-  text-align: center;
-}
-
-.draft-center-card h1 {
-  margin: 4px 0 10px;
-  font-size: 34px;
-  line-height: 1;
-}
-
-.room-row,
-.timer-grid,
-.control-row,
-.board-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.room-row {
-  color: #cbd5e1;
-  font-size: 13px;
-}
-
-.phase-status {
-  width: fit-content;
-  margin: 14px auto;
-  padding: 8px 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.12);
-  color: #cbd5e1;
-  font-weight: 800;
-}
-
-.phase-status.ban {
-  background: rgba(239, 68, 68, 0.18);
-  color: #fecaca;
-}
-
-.phase-status.pick {
-  background: rgba(34, 197, 94, 0.16);
-  color: #bbf7d0;
-}
-
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.08);
-}
-
-.timer-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(120px, 1fr));
-  gap: 10px;
-}
-
-.timer-grid div {
-  border-radius: 12px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.timer-grid small,
-.timer-grid strong {
-  display: block;
-}
-
-.timer-grid small {
-  color: #94a3b8;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.timer-grid strong {
-  margin-top: 4px;
-  font-size: 18px;
-}
-
-.control-row {
-  justify-content: flex-start;
-  margin: 18px 0;
-}
-
-.room-input {
-  width: 280px;
-}
-
-.error-box {
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(239, 68, 68, 0.14);
-  color: #fecaca;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-}
-
-.main-board {
-  border-radius: 20px;
-  padding: 18px;
-  margin-bottom: 18px;
-}
-
-.board-title-row {
   justify-content: space-between;
-  margin-bottom: 16px;
+  align-items: center;
 }
 
-.board-title-row h2 {
-  margin: 0;
-  font-size: 20px;
+.status-card,
+.draft-card,
+.raw-card {
+  background: #1f2937;
+  color: white;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-.board-title-row span {
-  color: #94a3b8;
-  font-size: 13px;
-}
-
-.draft-track {
+.status-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
 }
 
-.draft-card {
-  position: relative;
-  min-height: 210px;
-  border-radius: 18px;
-  padding: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
-}
-
-.draft-card.ban {
-  border-color: rgba(239, 68, 68, 0.35);
-}
-
-.draft-card.pick {
-  border-color: rgba(34, 197, 94, 0.35);
-}
-
-.draft-card.team1 {
-  box-shadow: inset 3px 0 0 #3b82f6;
-}
-
-.draft-card.team2 {
-  box-shadow: inset 3px 0 0 #ef4444;
-}
-
-.draft-card.active {
-  outline: 2px solid rgba(250, 204, 21, 0.65);
-}
-
-.draft-card.empty {
-  opacity: 0.55;
-}
-
-.draft-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  color: #94a3b8;
-  font-size: 12px;
-}
-
-.draft-card-top strong {
-  color: #fff;
-  font-size: 13px;
-}
-
-.hero-preview {
-  width: 94px;
-  height: 94px;
-  margin: 18px auto 12px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.hero-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.hero-name {
-  min-height: 36px;
-  text-align: center;
-  font-weight: 900;
-  font-size: 15px;
-}
-
-.camp-pill,
-.action-chip {
-  width: fit-content;
-  margin: 10px auto 0;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.camp-pill.team1 {
-  background: rgba(59, 130, 246, 0.22);
-  color: #bfdbfe;
-}
-
-.camp-pill.team2 {
-  background: rgba(239, 68, 68, 0.22);
-  color: #fecaca;
-}
-
-.camp-pill.neutral {
-  background: rgba(148, 163, 184, 0.18);
-  color: #cbd5e1;
-}
-
-.table-wrap {
-  overflow-x: auto;
-}
-
-.draft-table {
-  width: 100%;
-  min-width: 860px;
-  border-collapse: collapse;
-}
-
-.draft-table th,
-.draft-table td {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 12px;
-  text-align: left;
-  vertical-align: middle;
-}
-
-.draft-table th {
-  color: #cbd5e1;
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 12px;
+.status-label {
+  font-size: 11px;
+  color: #9ca3af;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.action-chip {
-  margin: 0;
-  display: inline-flex;
+.status-value {
+  font-size: 22px;
+  font-weight: 800;
 }
 
-.action-chip.ban {
-  background: rgba(239, 68, 68, 0.18);
-  color: #fecaca;
+.status-value.small {
+  font-size: 14px;
 }
 
-.action-chip.pick {
-  background: rgba(34, 197, 94, 0.16);
-  color: #bbf7d0;
-}
-
-.draft-cell {
+.draft-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
+}
+
+.draft-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px 1fr;
+  gap: 16px;
+}
+
+.team-panel {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.78);
+}
+
+.blue-panel {
+  box-shadow: inset 4px 0 0 #2563eb;
+}
+
+.red-panel {
+  box-shadow: inset 4px 0 0 #dc2626;
+}
+
+.team-title {
+  font-size: 24px;
+  font-weight: 900;
+  margin-bottom: 14px;
+}
+
+.blue-panel .team-title {
+  color: #60a5fa;
+}
+
+.red-panel .team-title {
+  color: #f87171;
+}
+
+.phase-section {
+  margin-bottom: 18px;
+}
+
+.phase-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #d1d5db;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(90px, 1fr));
   gap: 10px;
 }
 
-.draft-cell img {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+.slot-grid.bans {
+  grid-template-columns: repeat(3, minmax(70px, 1fr));
+}
+
+.center-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.map-box,
+.current-box {
+  padding: 18px;
+  border-radius: 18px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.map-label {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.map-name,
+.current-phase {
+  font-size: 24px;
+  font-weight: 900;
+  margin-top: 6px;
+}
+
+.map-mode,
+.current-camp {
+  color: #d1d5db;
+  font-size: 14px;
+}
+
+:deep(.draft-slot) {
+  position: relative;
+  min-height: 138px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #020617;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+:deep(.draft-slot.pick.locked) {
+  border-color: rgba(96, 165, 250, 0.65);
+}
+
+:deep(.draft-slot.ban.locked) {
+  border-color: rgba(239, 68, 68, 0.65);
+}
+
+:deep(.draft-slot.empty) {
+  opacity: 0.55;
+}
+
+:deep(.slot-top) {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 1px 2px black;
+}
+
+:deep(.hero-frame) {
+  height: 86px;
+  background: #111827;
+  overflow: hidden;
+}
+
+:deep(.hero-img) {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  background: rgba(255, 255, 255, 0.06);
+  transform: scale(1.12) translateY(-5%);
 }
 
-.draft-cell-text strong,
-.draft-cell-text span {
-  display: block;
+:deep(.draft-slot.ban .hero-img) {
+  filter: grayscale(1) brightness(0.48);
 }
 
-.draft-cell-text span {
-  color: #94a3b8;
+:deep(.hero-name) {
+  padding: 7px 8px 0;
   font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.empty-cell,
-.empty-state {
-  color: #94a3b8;
+:deep(.hero-role) {
+  padding: 0 8px 8px;
+  font-size: 11px;
+  color: #9ca3af;
 }
 
-@media (max-width: 900px) {
-  .draft-header {
+.raw-card pre {
+  white-space: pre-wrap;
+  font-size: 12px;
+  color: #d1d5db;
+  margin: 0;
+  padding: 12px;
+}
+
+@media (max-width: 1200px) {
+  .draft-layout {
     grid-template-columns: 1fr;
   }
 
-  .timer-grid {
-    grid-template-columns: 1fr;
+  .status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
 </style>

@@ -275,7 +275,7 @@ import { useSeshStore } from 'src/stores/sesh'
 const seshStore = useSeshStore()
 const route = useRoute()
 // const activeTab = ref('stats')
-const roomId = computed(() => route.query?.roomId || seshStore.room || '120001')
+const roomId = computed(() => seshStore.room || '120001')
 const loading = ref(false)
 const isPolling = ref(false)
 const selectedPlayerId = ref(null)

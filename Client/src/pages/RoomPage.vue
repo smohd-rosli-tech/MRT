@@ -70,7 +70,8 @@
 
       <template #body-cell-action="props">
         <q-td :props="props" class="text-center">
-          <q-btn color="primary" unelevated label="Open" @click="openRoom(props.row)" />
+          <q-btn color="primary" unelevated label="Dashboard" @click="openDashboard(props.row)" />
+          <q-btn color="secondary" unelevated label="Draft" @click="openDraft(props.row)" class="q-ml-sm" />
         </q-td>
       </template>
     </q-table>
@@ -145,10 +146,22 @@ async function loadRooms() {
   }
 }
 
-function openRoom(room) {
+async function openDraft(room) {
   seshStore.updateRoom(String(room.room_id));
+  await api.post("/live/active-room", {
+    room_id: String(room.room_id),
+  });
+  console.log('Navigating to live draft with room id: ', room.room_id)
+  router.push({ name: 'DraftPage' })
+}
+
+async function openDashboard(room) {
+  seshStore.updateRoom(String(room.room_id));
+  await api.post("/live/active-room", {
+    room_id: String(room.room_id),
+  });
   console.log('Navigating to live dashboard with room id: ', room.room_id)
-  router.push({name: 'DashboardPage', query: { roomId: String(room.room_id)}})
+  router.push({ name: 'DashboardPage' })
 }
 
 function getGroup(room, key) {

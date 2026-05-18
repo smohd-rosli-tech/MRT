@@ -31,6 +31,17 @@ const roomBattleTracker = new Map();
 const latestBattleCache = new Map();
 
 /* -----------------------------
+   Xpression helpers
+----------------------------- */
+const axios = require("axios");
+
+let activeRoomId = null;
+let xpressionPollTimer = null;
+
+const XPRESSION_BASE =
+  process.env.INTERNAL_API_BASE || "http://localhost:9000/api/xpression";
+
+/* -----------------------------
    Draft helpers
 ----------------------------- */
 
@@ -134,6 +145,26 @@ function buildDraftPlan(firstPickerPhase1) {
       { round_index: 9, phase: "BAN", camp: second, expected_count: 1 },
     ],
   };
+}
+
+function buildRealtimeDraftForXpression(realtime = {}) {
+  const data = realtime?.data || realtime || {};
+
+  const histories = Array.isArray(data.suggest_histories)
+    ? data.suggest_histories
+    : [];
+
+  const Draft = histories
+    .filter((item) => Number(item.suggest_hero) > 0)
+    .map((item) => ({
+      round_index: Number(item.round_index),
+      operate_type: Number(item.operate_type),
+      camp: Number(item.camp),
+      battle_side: Number(item.battle_side ?? 0),
+      cur_pick_hero: Number(item.suggest_hero),
+    }));
+
+  return buildLiveDraft(Draft);
 }
 
 /* -----------------------------
@@ -543,6 +574,100 @@ function buildPlayerKdaUltFromProcessed(
   };
 }
 
+function buildLiveStatsForXpression(processed = {}) {
+  return {
+    Map: {
+      id: processed?.meta?.mapId,
+      name: processed?.meta?.mapName,
+      mode: processed?.meta?.mapMode,
+      fight_time: processed?.meta?.fightTime,
+    },
+
+    Blue: {
+      name: "Blue",
+      short: "BLU",
+      score: processed?.meta?.scoreLeft || 0,
+      summary: processed?.teams?.team1?.summary || {},
+      players: processed?.teams?.team1?.players || [],
+    },
+
+    Red: {
+      name: "Red",
+      short: "RED",
+      score: processed?.meta?.scoreRight || 0,
+      summary: processed?.teams?.team2?.summary || {},
+      players: processed?.teams?.team2?.players || [],
+    },
+
+    MVP: processed?.mvps?.mvpPlayerId || null,
+    SVP: processed?.mvps?.svpPlayerId || null,
+    Objective: processed?.objective || {},
+    updatedAt: Date.now(),
+  };
+}
+
+/* -----------------------------
+   Poller
+----------------------------- */
+
+async function pollActiveRoomForXpression() {
+  if (!activeRoomId) return;
+
+  try {
+    const roomId = String(activeRoomId);
+
+    const [battleStats, realtimeDraft] = await Promise.all([
+      getBattleStatistics(roomId),
+      getRealtimeBanPick(roomId),
+    ]);
+
+    const rawLiveData = battleStats?.data || battleStats || {};
+
+    await saveLiveBattleIfNeeded(roomId, battleStats);
+
+    const processed = processLiveData(rawLiveData, {
+      heroMap,
+      mapMap,
+    });
+
+    latestBattleCache.set(roomId, processed);
+
+    await axios.post(`${XPRESSION_BASE}/xpression/stats`, {
+      mode: "live",
+      payload: buildLiveStatsForXpression(processed),
+    });
+
+    // await axios.post(`${XPRESSION_BASE}/xpression/draft`, {
+    //   mode: "live",
+    //   realtime: processed.draft,
+    // });
+
+    await axios.post(`${XPRESSION_BASE}/xpression/draft`, {
+      mode: "live",
+      realtime: realtimeDraft,
+      map: {
+        id: processed?.meta?.mapId,
+        name: processed?.meta?.mapName,
+        mode: processed?.meta?.mapMode,
+      }
+    });
+  } catch (err) {
+    apiLogger.error("❌ Failed active room Xpression polling:", err.message);
+  }
+}
+
+function startXpressionPolling(roomId) {
+  activeRoomId = String(roomId);
+
+  if (xpressionPollTimer) {
+    clearInterval(xpressionPollTimer);
+  }
+
+  pollActiveRoomForXpression();
+
+  xpressionPollTimer = setInterval(pollActiveRoomForXpression, 500);
+}
+
 /* -----------------------------
    Routes
 ----------------------------- */
@@ -569,6 +694,28 @@ router.get("/rooms", async (req, res) => {
       error: err.message,
     });
   }
+});
+
+router.post("/active-room", (req, res) => {
+  const roomId = String(req.body?.room_id || "");
+
+  if (!roomId) {
+    return res.status(400).json({ message: "room_id is required" });
+  }
+
+  startXpressionPolling(roomId);
+
+  res.json({
+    success: true,
+    activeRoomId,
+  });
+});
+
+router.get("/active-room", (req, res) => {
+  res.json({
+    activeRoomId,
+    polling: Boolean(xpressionPollTimer),
+  });
 });
 
 router.get("/ban-pick/:roomId", async (req, res) => {

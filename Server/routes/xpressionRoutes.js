@@ -11,8 +11,9 @@ const mapsRaw = require("../../Client/src/assets/maps.json");
 let currentStatsPayload = null;
 let currentDraftPayload = null;
 let currentDraftMapMeta = null;
-
+let lastDraftSignature = "";
 let lastDraftData = [];
+let draftLoopSteps = [];
 let draftSourceData = [];
 let loopTimer = null;
 let loopIndex = 0;
@@ -28,10 +29,7 @@ const heroMap = Object.fromEntries(
 );
 
 const mapMap = Object.fromEntries(
-  (Array.isArray(mapsRaw) ? mapsRaw : []).map((map) => [
-    String(map.id),
-    map,
-  ]),
+  (Array.isArray(mapsRaw) ? mapsRaw : []).map((map) => [String(map.id), map]),
 );
 
 function getCurrentTime() {
@@ -76,9 +74,12 @@ function getHeroRole(heroId) {
 
   if (!hero) return "Unknown";
 
-  if (id === 10571 && Array.isArray(hero.role)) return hero.role[0] || "Duelist";
-  if (id === 10572 && Array.isArray(hero.role)) return hero.role[1] || "Vanguard";
-  if (id === 10573 && Array.isArray(hero.role)) return hero.role[2] || "Strategist";
+  if (id === 10571 && Array.isArray(hero.role))
+    return hero.role[0] || "Duelist";
+  if (id === 10572 && Array.isArray(hero.role))
+    return hero.role[1] || "Vanguard";
+  if (id === 10573 && Array.isArray(hero.role))
+    return hero.role[2] || "Strategist";
 
   if (Array.isArray(hero.role)) return hero.role[0] || "Unknown";
 
@@ -90,7 +91,12 @@ function getMapMeta(mapId) {
 
   return {
     id: Number(mapId || 0),
-    name: (map.sub_name || map.full_name || map.name || `Map ${mapId || 0}`).toUpperCase(),
+    name: (
+      map.sub_name ||
+      map.full_name ||
+      map.name ||
+      `Map ${mapId || 0}`
+    ).toUpperCase(),
     mode: (map.game_mode || "").toUpperCase(),
   };
 }
@@ -100,41 +106,116 @@ function getDraftTimer() {
     return {
       phase_seconds: PHASE_SECONDS,
       remaining: PHASE_SECONDS,
+      elapsed: 0,
+      is_running: false,
     };
   }
 
   const elapsed = Math.floor((Date.now() - phaseStartedAt) / 1000);
+  const remaining = Math.max(PHASE_SECONDS - elapsed, 0);
 
   return {
     phase_seconds: PHASE_SECONDS,
-    remaining: Math.max(PHASE_SECONDS - elapsed, 0),
+    remaining,
+    elapsed,
+    is_running: remaining > 0,
   };
 }
 
-function buildDraftPlan() {
-  const first = 2;
-  const second = 1;
+function normalizeDraftCampByRound(item) {
+  const round = Number(item.round_index ?? item.round)
+  const type = Number(item.operate_type) === 1 || item.type === "PICK" ? "PICK" : "BAN"
 
+  const campByRound = {
+    "1_PICK": 1,
+    "2_BAN": 2,
+    "3_PICK": 2,
+    "4_BAN": 1,
+    "6_PICK": 2,
+    "7_BAN": 1,
+    "8_PICK": 1,
+    "9_BAN": 2,
+  }
+
+  const key = `${round}_${type}`
+
+  if (campByRound[key]) {
+    return {
+      ...item,
+      camp: campByRound[key],
+    }
+  }
+
+  return item
+}
+
+// function getDraftTimer() {
+//   if (!phaseStartedAt) {
+//     return {
+//       phase_seconds: PHASE_SECONDS,
+//       remaining: PHASE_SECONDS,
+//     };
+//   }
+
+//   const elapsed = Math.floor((Date.now() - phaseStartedAt) / 1000);
+
+//   return {
+//     phase_seconds: PHASE_SECONDS,
+//     remaining: Math.max(PHASE_SECONDS - elapsed, 0),
+//   };
+// }
+
+function buildDraftPlan() {
   return {
-    firstPickerPhase1: first,
-    firstPickerPhase2: second,
+    firstPickerPhase1: 1,
+    firstPickerPhase2: 2,
+
     rounds: [
+      // Round 0: both teams ban at same time
       { round_index: 0, phase: "BAN", camp: "BOTH", expected_count: 2 },
 
-      { round_index: 1, phase: "PICK", camp: first, expected_count: 1 },
-      { round_index: 2, phase: "BAN", camp: second, expected_count: 1 },
-      { round_index: 3, phase: "PICK", camp: second, expected_count: 1 },
-      { round_index: 4, phase: "BAN", camp: first, expected_count: 1 },
+      // Phase 1
+      { round_index: 1, phase: "PICK", camp: 1, expected_count: 1 },
+      { round_index: 2, phase: "BAN", camp: 2, expected_count: 1 },
+      { round_index: 3, phase: "PICK", camp: 2, expected_count: 1 },
+      { round_index: 4, phase: "BAN", camp: 1, expected_count: 1 },
 
+      // Round 5: both teams ban at same time
       { round_index: 5, phase: "BAN", camp: "BOTH", expected_count: 2 },
 
-      { round_index: 6, phase: "PICK", camp: second, expected_count: 1 },
-      { round_index: 7, phase: "BAN", camp: first, expected_count: 1 },
-      { round_index: 8, phase: "PICK", camp: first, expected_count: 1 },
-      { round_index: 9, phase: "BAN", camp: second, expected_count: 1 },
+      // Phase 2
+      { round_index: 6, phase: "PICK", camp: 2, expected_count: 1 },
+      { round_index: 7, phase: "BAN", camp: 1, expected_count: 1 },
+      { round_index: 8, phase: "PICK", camp: 1, expected_count: 1 },
+      { round_index: 9, phase: "BAN", camp: 2, expected_count: 1 },
     ],
   };
 }
+
+// function buildDraftPlan() {
+//   const first = 2;
+//   const second = 1;
+
+//   return {
+//     firstPickerPhase1: first,
+//     firstPickerPhase2: second,
+//     rounds: [
+//       { round_index: 0, phase: "BAN", camp: "BOTH", expected_count: 2 },
+
+//       { round_index: 1, phase: "PICK", camp: first, expected_count: 1 },
+//       { round_index: 2, phase: "BAN", camp: second, expected_count: 1 },
+//       { round_index: 3, phase: "PICK", camp: second, expected_count: 1 },
+//       { round_index: 4, phase: "BAN", camp: first, expected_count: 1 },
+
+//       { round_index: 5, phase: "BAN", camp: "BOTH", expected_count: 2 },
+
+//       { round_index: 6, phase: "PICK", camp: second, expected_count: 1 },
+//       { round_index: 7, phase: "BAN", camp: first, expected_count: 1 },
+//       { round_index: 8, phase: "PICK", camp: first, expected_count: 1 },
+//       { round_index: 9, phase: "BAN", camp: second, expected_count: 1 },
+//     ],
+//   };
+// }
 
 function buildEmptyDraftSkeleton() {
   const plan = buildDraftPlan();
@@ -154,7 +235,8 @@ function buildEmptyDraftSkeleton() {
         round: Number(round.round_index),
         type: round.phase,
         camp,
-        slot: camp === 1 ? `Blue ${slotCounter[camp]}` : `Red ${slotCounter[camp]}`,
+        slot:
+          camp === 1 ? `Blue ${slotCounter[camp]}` : `Red ${slotCounter[camp]}`,
         hero: {
           id: 0,
           name: "Hero 0",
@@ -166,7 +248,32 @@ function buildEmptyDraftSkeleton() {
   });
 }
 
+// function getDraftMeta(Draft = []) {
+//   const next = Draft.find((slot) => !slot.locked);
+
+//   if (!next) {
+//     return {
+//       current_round: 10,
+//       phase: "END",
+//       active_camp: null,
+//       is_complete: true,
+//       completed_steps: Draft.length,
+//       total_steps: Draft.length,
+//     };
+//   }
+
+//   return {
+//     current_round: next.round,
+//     phase: next.type,
+//     active_camp: next.camp,
+//     is_complete: false,
+//     completed_steps: Draft.filter((slot) => slot.locked).length,
+//     total_steps: Draft.length,
+//   };
+// }
+
 function getDraftMeta(Draft = []) {
+  const lockedSlots = Draft.filter((slot) => slot.locked);
   const next = Draft.find((slot) => !slot.locked);
 
   if (!next) {
@@ -174,21 +281,74 @@ function getDraftMeta(Draft = []) {
       current_round: 10,
       phase: "END",
       active_camp: null,
+      active_side: "-",
       is_complete: true,
       completed_steps: Draft.length,
       total_steps: Draft.length,
     };
   }
 
+  const isSimultaneousBanRound = next.round === 0 || next.round === 5;
+
   return {
     current_round: next.round,
     phase: next.type,
-    active_camp: next.camp,
+    active_camp: isSimultaneousBanRound ? "BOTH" : next.camp,
+    active_side: isSimultaneousBanRound
+      ? "Both"
+      : next.camp === 1
+        ? "Blue"
+        : "Red",
     is_complete: false,
-    completed_steps: Draft.filter((slot) => slot.locked).length,
+    completed_steps: lockedSlots.length,
     total_steps: Draft.length,
   };
 }
+
+// function getDraftMeta(Draft = []) {
+//   const lockedSlots = Draft.filter((slot) => slot.locked);
+//   const latestLocked = lockedSlots[lockedSlots.length - 1] || null;
+//   const next = Draft.find((slot) => !slot.locked);
+
+//   if (!latestLocked && next) {
+//     return {
+//       current_round: next.round,
+//       phase: next.type,
+//       active_camp: next.round === 0 || next.round === 5 ? "BOTH" : next.camp,
+//       is_complete: false,
+//       completed_steps: 0,
+//       total_steps: Draft.length,
+//     };
+//   }
+
+//   if (!next) {
+//     return {
+//       current_round: latestLocked?.round ?? 10,
+//       phase: "END",
+//       active_camp: null,
+//       is_complete: true,
+//       completed_steps: Draft.length,
+//       total_steps: Draft.length,
+//     };
+//   }
+
+//   const currentRound = latestLocked?.round ?? next.round;
+//   const isSimultaneousBanRound = currentRound === 0 || currentRound === 5;
+
+//   return {
+//     current_round: currentRound,
+//     phase: latestLocked?.type || next.type,
+//     active_camp: isSimultaneousBanRound
+//       ? "BOTH"
+//       : latestLocked?.camp || next.camp,
+//     next_round: next.round,
+//     next_phase: next.type,
+//     next_active_camp: next.round === 0 || next.round === 5 ? "BOTH" : next.camp,
+//     is_complete: false,
+//     completed_steps: lockedSlots.length,
+//     total_steps: Draft.length,
+//   };
+// }
 
 function getHeroIdFromDraftItem(item = {}, isLive = false) {
   if (isLive) {
@@ -203,19 +363,49 @@ function buildDraft(data = [], options = {}, isLive = false) {
 
   const safeData = Array.isArray(data) ? data : [];
 
-  safeData.forEach((item, index) => {
-    if (!Draft[index]) return;
+  // safeData.forEach((item, index) => {
+  //   if (!Draft[index]) return;
 
+  //   const heroId = getHeroIdFromDraftItem(item, isLive);
+
+  //   Draft[index] = {
+  //     ...Draft[index],
+  //     round: Number(item.round_index ?? item.round ?? Draft[index].round),
+  //     type:
+  //       Number(item.operate_type) === 1 || item.type === "PICK"
+  //         ? "PICK"
+  //         : "BAN",
+  //     camp: Number(item.camp || Draft[index].camp),
+  //     hero: {
+  //       id: heroId,
+  //       name: getHeroName(heroId),
+  //       role: getHeroRole(heroId),
+  //     },
+  //     locked: heroId > 0,
+  //   };
+  // });
+
+  safeData.forEach((item) => {
     const heroId = getHeroIdFromDraftItem(item, isLive);
+    const itemRound = Number(item.round_index ?? item.round);
+    const itemType =
+      Number(item.operate_type) === 1 || item.type === "PICK" ? "PICK" : "BAN";
+    const itemCamp = Number(item.camp);
+
+    const index = Draft.findIndex(
+      (slot) =>
+        Number(slot.round) === itemRound &&
+        slot.type === itemType &&
+        Number(slot.camp) === itemCamp,
+    );
+
+    if (index === -1) return;
 
     Draft[index] = {
       ...Draft[index],
-      round: Number(item.round_index ?? item.round ?? Draft[index].round),
-      type:
-        Number(item.operate_type) === 1 || item.type === "PICK"
-          ? "PICK"
-          : "BAN",
-      camp: Number(item.camp || Draft[index].camp),
+      round: itemRound,
+      type: itemType,
+      camp: itemCamp,
       hero: {
         id: heroId,
         name: getHeroName(heroId),
@@ -273,6 +463,17 @@ function getScore(scoreInfo, camp) {
   }
 
   return Number(scoreInfo[String(camp)] || scoreInfo[camp] || 0);
+}
+
+function getDraftSignature(data = []) {
+  return JSON.stringify(
+    data.map((item) => ({
+      round_index: item.round_index,
+      operate_type: item.operate_type,
+      camp: item.camp,
+      hero: item.hero_id || item.cur_pick_hero || item.suggest_hero || 0,
+    })),
+  );
 }
 
 function buildPlayerPayload(player, playerNameMap = {}) {
@@ -357,6 +558,33 @@ function buildXpressionPostMatch(match, playerNameMap = {}) {
 
     MVP: mvpPlayer ? buildPlayerPayload(mvpPlayer, playerNameMap) : null,
   };
+}
+
+function buildDraftLoopSteps(sortedDraftData = []) {
+  const stepKeys = [
+    { round: 0, type: "BAN" },
+    { round: 1, type: "PICK" },
+    { round: 2, type: "BAN" },
+    { round: 3, type: "PICK" },
+    { round: 4, type: "BAN" },
+    { round: 5, type: "BAN" },
+    { round: 6, type: "PICK" },
+    { round: 7, type: "BAN" },
+    { round: 8, type: "PICK" },
+    { round: 9, type: "BAN" },
+  ];
+
+  return stepKeys.map((step) =>
+    sortedDraftData.filter((item) => {
+      const itemRound = Number(item.round_index ?? item.round);
+      const itemType =
+        Number(item.operate_type) === 1 || item.type === "PICK"
+          ? "PICK"
+          : "BAN";
+
+      return itemRound === step.round && itemType === step.type;
+    }),
+  );
 }
 
 /* -----------------------------
@@ -448,10 +676,24 @@ router.post("/draft", async (req, res) => {
           ? payload
           : normalizeRealtimeDraftPayload(realtime || req.body);
 
-      lastDraftData = liveDraftData;
-      phaseStartedAt = Date.now();
+      const newSignature = getDraftSignature(liveDraftData);
 
+      if (newSignature !== lastDraftSignature) {
+        phaseStartedAt = Date.now();
+        lastDraftSignature = newSignature;
+      }
+
+      lastDraftData = liveDraftData;
       currentDraftPayload = buildDraft(lastDraftData, {}, true);
+      // const previousLength = lastDraftData.length;
+
+      // if (liveDraftData.length !== previousLength) {
+      //   phaseStartedAt = Date.now();
+      // }
+
+      // lastDraftData = liveDraftData;
+      // phaseStartedAt = Date.now();
+      // currentDraftPayload = buildDraft(lastDraftData, {}, true);
 
       xpressionLogger.info("📡 Live draft payload updated for Xpression");
 
@@ -511,19 +753,46 @@ router.post("/draft", async (req, res) => {
   }
 });
 
+// router.get("/draft", (req, res) => {
+//   const payload = buildDraft(lastDraftData || [], {}, false);
+
+//   return res.json({
+//     ...payload,
+//     Timer: getDraftTimer(),
+//     source: currentDraftPayload ? "active" : "blank",
+//     message: lastDraftData?.length
+//       ? undefined
+//       : `⚠️ No draft data received yet (as of ${getCurrentTime()})`,
+//   });
+// });
+
 router.get("/draft", (req, res) => {
-  if (currentDraftPayload) {
-    return res.json(currentDraftPayload);
-  }
+  const payload =
+    currentDraftPayload || buildDraft(lastDraftData || [], {}, false);
 
   return res.json({
-    Map: currentDraftMapMeta || {},
+    ...payload,
     Timer: getDraftTimer(),
-    Draft: buildEmptyDraftSkeleton(),
-    meta: getDraftMeta(buildEmptyDraftSkeleton()),
-    message: `⚠️ No draft data received yet (as of ${getCurrentTime()})`,
+    source: currentDraftPayload ? "active" : "blank",
+    message: lastDraftData?.length
+      ? undefined
+      : `⚠️ No draft data received yet (as of ${getCurrentTime()})`,
   });
 });
+
+// router.get("/draft", (req, res) => {
+//   if (currentDraftPayload) {
+//     return res.json(currentDraftPayload);
+//   }
+
+//   return res.json({
+//     Map: currentDraftMapMeta || {},
+//     Timer: getDraftTimer(),
+//     Draft: buildEmptyDraftSkeleton(),
+//     meta: getDraftMeta(buildEmptyDraftSkeleton()),
+//     message: `⚠️ No draft data received yet (as of ${getCurrentTime()})`,
+//   });
+// });
 
 router.get("/draft/reset", (req, res) => {
   if (loopTimer) {
@@ -552,6 +821,111 @@ router.get("/draft/reset", (req, res) => {
   });
 });
 
+// router.post("/draft/loop/start", async (req, res) => {
+//   try {
+//     const { match_uid, interval = 20000 } = req.body || {};
+
+//     if (!match_uid) {
+//       return res.status(400).json({
+//         error: "match_uid is required",
+//       });
+//     }
+
+//     const match = await Match.findOne({ match_uid }).lean();
+
+//     if (!match) {
+//       return res.status(404).json({
+//         error: "Match not found",
+//         match_uid,
+//       });
+//     }
+
+//     currentDraftMapMeta = getMapMeta(match.match_map_id);
+//     draftSourceData = match.dynamic_fields?.ban_pick_info || [];
+
+//     const draftOrder = [
+//       { round: 0, type: "BAN", camp: 1 },
+//       { round: 0, type: "BAN", camp: 2 },
+//       { round: 1, type: "PICK", camp: 1 },
+//       { round: 2, type: "BAN", camp: 2 },
+//       { round: 3, type: "PICK", camp: 2 },
+//       { round: 4, type: "BAN", camp: 1 },
+//       { round: 5, type: "BAN", camp: 1 },
+//       { round: 5, type: "BAN", camp: 2 },
+//       { round: 6, type: "PICK", camp: 2 },
+//       { round: 7, type: "BAN", camp: 1 },
+//       { round: 8, type: "PICK", camp: 1 },
+//       { round: 9, type: "BAN", camp: 2 },
+//     ];
+
+//     function getDraftOrderIndex(item) {
+//       const itemRound = Number(item.round_index);
+//       const itemType = Number(item.operate_type) === 1 ? "PICK" : "BAN";
+//       const itemCamp = Number(item.camp);
+
+//       return draftOrder.findIndex(
+//         (slot) =>
+//           slot.round === itemRound &&
+//           slot.type === itemType &&
+//           slot.camp === itemCamp,
+//       );
+//     }
+
+//     draftSourceData = draftSourceData
+//       .filter(
+//         (item) =>
+//           Number(item.hero_id || item.cur_pick_hero || item.suggest_hero || 0) >
+//           0,
+//       )
+//       .sort((a, b) => getDraftOrderIndex(a) - getDraftOrderIndex(b));
+
+//     if (!draftSourceData.length) {
+//       return res.status(400).json({
+//         error: "No ban/pick data found for this match",
+//       });
+//     }
+
+//     if (loopTimer) clearInterval(loopTimer);
+
+//     loopIndex = 0;
+//     lastDraftData = [];
+//     phaseStartedAt = Date.now();
+
+//     currentDraftPayload = buildDraft(lastDraftData, {}, false);
+
+//     loopTimer = setInterval(() => {
+//       loopIndex += 1;
+
+//       if (loopIndex > draftSourceData.length) {
+//         loopIndex = 0;
+//       }
+
+//       lastDraftData = draftSourceData.slice(0, loopIndex);
+//       phaseStartedAt = Date.now();
+//       currentDraftPayload = buildDraft(lastDraftData, {}, false);
+//     }, Number(interval));
+
+//     console.log(
+//       `🚀 Draft loop started for match ${match_uid} with interval ${interval}ms`,
+//     );
+
+//     res.json({
+//       success: true,
+//       message: "Draft loop started",
+//       match_uid,
+//       interval: Number(interval),
+//       totalSteps: draftSourceData.length,
+//       skeletonSlots: 12,
+//       data: currentDraftPayload,
+//     });
+//   } catch (err) {
+//     res.status(500).json({
+//       error: "Failed to start draft loop",
+//       detail: err.message,
+//     });
+//   }
+// });
+
 router.post("/draft/loop/start", async (req, res) => {
   try {
     const { match_uid, interval = 20000 } = req.body || {};
@@ -572,11 +946,88 @@ router.post("/draft/loop/start", async (req, res) => {
     }
 
     currentDraftMapMeta = getMapMeta(match.match_map_id);
-    draftSourceData = match.dynamic_fields?.ban_pick_info || [];
+
+    // const rawDraftData = match.dynamic_fields?.ban_pick_info || [];
+    const rawDraftData = (match.dynamic_fields?.ban_pick_info || []).map(normalizeDraftCampByRound)
+
+    const draftOrder = [
+      { round: 0, type: "BAN", camp: 1 },
+      { round: 0, type: "BAN", camp: 2 },
+      { round: 1, type: "PICK", camp: 1 },
+      { round: 2, type: "BAN", camp: 2 },
+      { round: 3, type: "PICK", camp: 2 },
+      { round: 4, type: "BAN", camp: 1 },
+      { round: 5, type: "BAN", camp: 1 },
+      { round: 5, type: "BAN", camp: 2 },
+      { round: 6, type: "PICK", camp: 2 },
+      { round: 7, type: "BAN", camp: 1 },
+      { round: 8, type: "PICK", camp: 1 },
+      { round: 9, type: "BAN", camp: 2 },
+    ];
+
+    const phaseOrder = [
+      { round: 0, type: "BAN" },
+      { round: 1, type: "PICK" },
+      { round: 2, type: "BAN" },
+      { round: 3, type: "PICK" },
+      { round: 4, type: "BAN" },
+      { round: 5, type: "BAN" },
+      { round: 6, type: "PICK" },
+      { round: 7, type: "BAN" },
+      { round: 8, type: "PICK" },
+      { round: 9, type: "BAN" },
+    ];
+
+    function getDraftItemInfo(item) {
+      return {
+        round: Number(item.round_index ?? item.round),
+        type:
+          Number(item.operate_type) === 1 || item.type === "PICK"
+            ? "PICK"
+            : "BAN",
+        camp: Number(item.camp),
+        heroId: Number(
+          item.hero_id || item.cur_pick_hero || item.suggest_hero || 0,
+        ),
+      };
+    }
+
+    function getDraftOrderIndex(item) {
+      const info = getDraftItemInfo(item);
+
+      const index = draftOrder.findIndex(
+        (slot) =>
+          slot.round === info.round &&
+          slot.type === info.type &&
+          slot.camp === info.camp,
+      );
+
+      return index === -1 ? 999 : index;
+    }
+
+    draftSourceData = rawDraftData
+      .filter((item) => getDraftItemInfo(item).heroId > 0)
+      .sort((a, b) => getDraftOrderIndex(a) - getDraftOrderIndex(b));
 
     if (!draftSourceData.length) {
       return res.status(400).json({
         error: "No ban/pick data found for this match",
+      });
+    }
+
+    const draftLoopSteps = phaseOrder
+      .map((phase) =>
+        draftSourceData.filter((item) => {
+          const info = getDraftItemInfo(item);
+
+          return info.round === phase.round && info.type === phase.type;
+        }),
+      )
+      .filter((step) => step.length > 0);
+
+    if (!draftLoopSteps.length) {
+      return res.status(400).json({
+        error: "No draft loop steps could be built",
       });
     }
 
@@ -585,29 +1036,43 @@ router.post("/draft/loop/start", async (req, res) => {
     loopIndex = 0;
     lastDraftData = [];
     phaseStartedAt = Date.now();
-
     currentDraftPayload = buildDraft(lastDraftData, {}, false);
 
     loopTimer = setInterval(() => {
       loopIndex += 1;
 
-      if (loopIndex > draftSourceData.length) {
+      if (loopIndex > draftLoopSteps.length) {
         loopIndex = 0;
       }
 
-      lastDraftData = draftSourceData.slice(0, loopIndex);
+      lastDraftData = draftLoopSteps.slice(0, loopIndex).flat();
+
+      // console.log("Draft loop tick:", {
+      //   loopIndex,
+      //   shownItems: lastDraftData.length,
+      //   rounds: lastDraftData.map((i) => ({
+      //     round: i.round_index,
+      //     type: Number(i.operate_type) === 1 ? "PICK" : "BAN",
+      //     camp: i.camp,
+      //     hero: i.hero_id,
+      //   })),
+      // });
+
       phaseStartedAt = Date.now();
       currentDraftPayload = buildDraft(lastDraftData, {}, false);
     }, Number(interval));
 
-    console.log(`🚀 Draft loop started for match ${match_uid} with interval ${interval}ms`);
+    console.log(
+      `🚀 Draft loop started for match ${match_uid} with interval ${interval}ms`,
+    );
 
     res.json({
       success: true,
       message: "Draft loop started",
       match_uid,
       interval: Number(interval),
-      totalSteps: draftSourceData.length,
+      totalSteps: draftLoopSteps.length,
+      totalDraftItems: draftSourceData.length,
       skeletonSlots: 12,
       data: currentDraftPayload,
     });

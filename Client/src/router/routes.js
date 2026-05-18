@@ -7,6 +7,7 @@ const routes = [
       { path: '/team', component: () => import('pages/database/TeamManager.vue') },
       { path: '/room', component: () => import('pages/RoomPage.vue') },
       { path: '/matches', component: () => import('pages/MatchesPage.vue') },
+      { path: '/draft', component: () => import('pages/XpressionDraftViewer.vue') },
       {
         path: '/matches/:match_uid',
         name: 'match-detail',
@@ -15,7 +16,7 @@ const routes = [
       {
         path: 'live',
         children: [
-          { path: 'draft', name: 'DraftPage', component: () => import('pages/DraftPage.vue') },
+          { path: 'draft', name: 'DraftPage', component: () => import('pages/XpressionDraftViewer.vue') },
           {
             path: 'dashboard',
             name: 'DashboardPage',
@@ -26,7 +27,10 @@ const routes = [
       {
         path: 'test',
         // children: [{ path: '', component: () => import('pages/test/LiveDashboard.vue') }],
-        children: [{ path: '', component: () => import('pages/test/testObjective.vue') }],
+        children: [
+          { path: '', component: () => import('pages/test/testObjective.vue') },
+          { path: 'draft', component: () => import('pages/test/DraftPage.vue') },
+        ],
       },
     ],
   },

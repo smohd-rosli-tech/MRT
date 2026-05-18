@@ -523,9 +523,9 @@ async function loadMatch() {
       || convertMatchToDashboard(rawMatch.value).teams.team2.players[0]
     selectedPlayerId.value = firstPlayer?.playerId || null
 
-    console.log('Converted Match Data:', convertMatchToDashboard(rawMatch.value))
-    console.log('First Player:', firstPlayer)
-    console.log('Selected Player ID:', selectedPlayerId.value)
+    // console.log('Converted Match Data:', convertMatchToDashboard(rawMatch.value))
+    // console.log('First Player:', firstPlayer)
+    // console.log('Selected Player ID:', selectedPlayerId.value)
   } catch (err) {
     console.error('Failed to load match detail:', err)
 

@@ -10,11 +10,11 @@
 
         <q-btn stretch flat label="Room" @click="navigate('/room')" v-if="isViewMode === '9004'"/>
 
-        <q-btn stretch flat label="Draft" @click="navigate('/live/draft')" v-if="isViewMode === '9004'"/>
+        <q-btn stretch flat label="Draft" @click="navigate('/draft')" v-if="isViewMode === '9004'"/>
 
         <q-btn stretch flat label="Live" @click="navigate('/live/dashboard')" v-if="isViewMode !== '9008'"/>
 
-        <q-btn stretch flat label="Test" @click="navigate('/test')" v-if="isViewMode === '9004'"/>
+        <q-btn stretch flat label="Test" @click="navigate('/test/draft')" v-if="isViewMode === '9004'"/>
 
       </q-toolbar>
     </q-header>

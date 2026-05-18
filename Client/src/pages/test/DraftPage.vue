@@ -117,7 +117,7 @@
                 <DraftSlot
                   v-for="slot in bluePicks"
                   :key="`blue-pick-${slot.round}-${slot.slot}`"
-                  :draft-slot="draftSlot"
+                  :draft-slot="slot"
                 />
               </div>
             </div>
@@ -129,7 +129,7 @@
                 <DraftSlot
                   v-for="slot in blueBans"
                   :key="`blue-ban-${slot.round}-${slot.slot}`"
-                  :draft-slot="draftSlot"
+                  :draft-slot="slot"
                 />
               </div>
             </div>
@@ -207,8 +207,8 @@ import { useQuasar } from 'quasar'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from 'boot/axios'
 
-import heroesRaw from '../assets/heroes_UO.json'
-import mapsRaw from '../assets/maps.json'
+import heroesRaw from '../../assets/heroes_UO.json'
+import mapsRaw from '../../assets/maps.json'
 
 // Change this import to your actual store path/name if different
 import { useSeshStore } from 'src/stores/sesh'
@@ -331,6 +331,7 @@ const DraftSlot = defineComponent({
       )
   },
 })
+
 function normalizeHeroName(name = '') {
   return String(name)
     .trim()
@@ -851,16 +852,20 @@ onBeforeUnmount(() => {
 }
 
 :deep(.hero-frame) {
+  width: 86px;
   height: 86px;
+  margin: 28px auto 0;
+  border-radius: 12px;
   background: #111827;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 :deep(.hero-img) {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(1.12) translateY(-5%);
+  display: block;
 }
 
 :deep(.draft-slot.ban .hero-img) {

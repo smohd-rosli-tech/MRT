@@ -53,7 +53,7 @@
     <div class="summary-row q-mb-md">
       <div class="summary-card team1-card">
         <div class="summary-title">Team 1 Summary</div>
-        <div>Total Kills ⚔️ : {{ dashboard.teams.team1.summary.kills || 0 }}</div>
+        <div>Total KOs ⚔️ : {{ dashboard.teams.team1.summary.kills || 0 }}</div>
         <div>Total Damage 💥 : {{ formatCompact(dashboard.teams.team1.summary.damage) }}</div>
         <div>Total Heal 💚 : {{ formatCompact(dashboard.teams.team1.summary.heal) }}</div>
         <div>Avg Hit % 🎯 : {{ formatPct(dashboard.teams.team1.summary.avgHitRate) }}</div>
@@ -61,7 +61,7 @@
 
       <div class="summary-card team2-card">
         <div class="summary-title">Team 2 Summary</div>
-        <div>Total Kills ⚔️ : {{ dashboard.teams.team2.summary.kills || 0 }}</div>
+        <div>Total KOs ⚔️ : {{ dashboard.teams.team2.summary.kills || 0 }}</div>
         <div>Total Damage 💥 : {{ formatCompact(dashboard.teams.team2.summary.damage) }}</div>
         <div>Total Heal 💚 : {{ formatCompact(dashboard.teams.team2.summary.heal) }}</div>
         <div>Avg Hit % 🎯 : {{ formatPct(dashboard.teams.team2.summary.avgHitRate) }}</div>
@@ -180,7 +180,7 @@
           <span>{{ selectedPlayer.heroMeta?.displayName || `Hero ${selectedPlayer.heroId}` }}</span>
         </div>
         <div>
-          <strong>KDA</strong>
+          <strong>K/C/A</strong>
           <span>{{ selectedPlayer.kills }}/{{ selectedPlayer.deaths }}/{{ selectedPlayer.assists }}</span>
         </div>
         <div>
@@ -289,7 +289,7 @@ const playerColumns = [
   { name: 'player', label: 'Player', field: 'playerName', align: 'left' },
   { name: 'hero', label: 'Hero', field: 'heroId', align: 'left' },
   { name: 'k', label: 'K', field: 'kills', align: 'center' },
-  { name: 'd', label: 'D', field: 'deaths', align: 'center' },
+  { name: 'd', label: 'C', field: 'deaths', align: 'center' },
   { name: 'a', label: 'A', field: 'assists', align: 'center' },
   { name: 'dmg', label: 'DMG', field: 'damage', align: 'center' },
   { name: 'heal', label: 'Heal', field: 'heal', align: 'center' },

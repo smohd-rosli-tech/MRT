@@ -3,18 +3,61 @@
     <div class="page-title q-mb-md">Live Rooms</div>
 
     <div class="toolbar q-mb-md">
-      <q-btn color="blue-grey-8" icon="refresh" label="Refresh Rooms" @click="loadRooms" :loading="loading" />
+      <q-btn
+        color="blue-grey-8"
+        icon="refresh"
+        label="Refresh Rooms"
+        @click="loadRooms"
+        :loading="loading"
+      />
 
-      <q-input v-model="search" dense filled dark clearable placeholder="Search room ID, battle ID or team..."
-        class="search-input">
+      <q-input
+        v-model="search"
+        dense
+        filled
+        dark
+        clearable
+        placeholder="Search room ID, battle ID or team..."
+        class="search-input"
+      >
         <template #prepend>
           <q-icon name="search" />
         </template>
       </q-input>
+
+      <q-select
+        v-model="region"
+        :options="['GLOBAL', 'EMEA', 'AMERICAS']"
+        label="Region"
+        dark
+        dense
+        label-color="indigo-4"
+        color="indigo-4"
+        class="col-2"
+        @update:model-value="seshStore.updateRegion(region)"
+      />
+
+      <q-toggle
+        v-model="isTestMatch"
+        checked-icon="check"
+        color="deep-orange"
+        label="Test Match"
+        unchecked-icon="clear"
+        @update:model-value="seshStore.updateTestMatch(isTestMatch)"
+      />
     </div>
 
-    <q-table flat bordered dark :rows="filteredRooms" :columns="columns" row-key="room_id" class="rooms-table"
-      :loading="loading" :pagination="{ rowsPerPage: 20 }">
+    <q-table
+      flat
+      bordered
+      dark
+      :rows="filteredRooms"
+      :columns="columns"
+      row-key="room_id"
+      class="rooms-table"
+      :loading="loading"
+      :pagination="{ rowsPerPage: 20 }"
+    >
       <template #body-cell-round="props">
         <q-td :props="props">
           <q-badge rounded color="primary" :label="roundLabel(props.row)" />
@@ -23,21 +66,15 @@
 
       <template #body-cell-match="props">
         <q-td :props="props">
-          <div class="match-name">
-            {{ team1Name(props.row) }} vs {{ team2Name(props.row) }}
-          </div>
-          <div class="text-caption text-grey-5">
-            Room ID: {{ props.row.room_id }}
-          </div>
-          <div class="text-caption text-grey-5">
-            Battle ID: {{ props.row.battle_id || '-' }}
-          </div>
+          <div class="match-name">{{ team1Name(props.row) }} vs {{ team2Name(props.row) }}</div>
+          <div class="text-caption text-grey-5">Room ID: {{ props.row.room_id }}</div>
+          <div class="text-caption text-grey-5">Battle ID: {{ props.row.battle_id || '-' }}</div>
         </q-td>
       </template>
 
       <template v-slot:body-cell-roundResults="props">
         <q-td :props="props">
-          <div style="white-space: pre-line;">
+          <div style="white-space: pre-line">
             {{ roundResultsLabel(props.row) }}
           </div>
         </q-td>
@@ -62,16 +99,20 @@
       <template #body-cell-meta="props">
         <q-td :props="props">
           <div>League: {{ leagueLabel(props.row) }}</div>
-          <div class="text-caption text-grey-5">
-            Players: {{ memberCount(props.row) }}
-          </div>
+          <div class="text-caption text-grey-5">Players: {{ memberCount(props.row) }}</div>
         </q-td>
       </template>
 
       <template #body-cell-action="props">
         <q-td :props="props" class="text-center">
           <q-btn color="primary" unelevated label="Dashboard" @click="openDashboard(props.row)" />
-          <q-btn color="secondary" unelevated label="Draft" @click="openDraft(props.row)" class="q-ml-sm" />
+          <q-btn
+            color="secondary"
+            unelevated
+            label="Draft"
+            @click="openDraft(props.row)"
+            class="q-ml-sm"
+          />
         </q-td>
       </template>
     </q-table>
@@ -92,6 +133,8 @@ const $q = useQuasar()
 const loading = ref(false)
 const search = ref('')
 const rooms = ref([])
+const region = ref('GLOBAL')
+const isTestMatch = ref(false)
 
 const columns = [
   { name: 'round', label: 'Round', field: 'cur_bo', align: 'center' },
@@ -99,7 +142,7 @@ const columns = [
   { name: 'score', label: 'Score', field: 'score', align: 'center' },
   { name: 'roundResults', label: 'Round Result', field: 'roundResults', align: 'left' },
   { name: 'meta', label: 'Meta', field: 'meta', align: 'left' },
-  { name: 'action', label: 'Action', field: 'action', align: 'center' }
+  { name: 'action', label: 'Action', field: 'action', align: 'center' },
 ]
 
 const filteredRooms = computed(() => {
@@ -115,7 +158,7 @@ const filteredRooms = computed(() => {
       team1MiniName(room),
       team2MiniName(room),
       leagueLabel(room),
-      roundResultsLabel(room)
+      roundResultsLabel(room),
     ]
       .join(' ')
       .toLowerCase()
@@ -147,19 +190,19 @@ async function loadRooms() {
 }
 
 async function openDraft(room) {
-  seshStore.updateRoom(String(room.room_id));
-  await api.post("/live/active-room", {
+  seshStore.updateRoom(String(room.room_id))
+  await api.post('/live/active-room', {
     room_id: String(room.room_id),
-  });
+  })
   console.log('Navigating to live draft with room id: ', room.room_id)
   router.push({ name: 'DraftPage' })
 }
 
 async function openDashboard(room) {
-  seshStore.updateRoom(String(room.room_id));
-  await api.post("/live/active-room", {
+  seshStore.updateRoom(String(room.room_id))
+  await api.post('/live/active-room', {
     room_id: String(room.room_id),
-  });
+  })
   console.log('Navigating to live dashboard with room id: ', room.room_id)
   router.push({ name: 'DashboardPage' })
 }
@@ -204,15 +247,12 @@ function roundResultsLabel(room) {
   const results = Array.isArray(room?.round_results) ? room.round_results : []
   if (!results.length) return '-'
 
-  const team1 = room?.group_info?.["1"]
-  const team2 = room?.group_info?.["2"]
+  const team1 = room?.group_info?.['1']
+  const team2 = room?.group_info?.['2']
 
   return results
     .map((winner, index) => {
-      const winnerName =
-        winner === 1 ? team1?.mini_name :
-          winner === 2 ? team2?.mini_name :
-            '-'
+      const winnerName = winner === 1 ? team1?.mini_name : winner === 2 ? team2?.mini_name : '-'
 
       return `Round ${index + 1}: ${winnerName}`
     })

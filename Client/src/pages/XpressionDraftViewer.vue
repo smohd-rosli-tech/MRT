@@ -10,14 +10,42 @@
       </div>
 
       <div class="row items-center q-gutter-sm">
-        <q-badge :color="isPolling ? 'positive' : 'grey-7'" :label="isPolling ? 'POLLING' : 'STOPPED'" />
+        <q-badge
+          :color="isPolling ? 'positive' : 'grey-7'"
+          :label="isPolling ? 'POLLING' : 'STOPPED'"
+        />
 
-        <q-btn color="primary" icon="refresh" label="Refresh" :loading="loading" @click="loadDraft" />
+        <q-btn
+          color="primary"
+          icon="refresh"
+          label="Refresh"
+          :loading="loading"
+          @click="loadDraft"
+        />
 
-        <q-btn :color="isPolling ? 'negative' : 'positive'" :icon="isPolling ? 'pause' : 'play_arrow'"
-          :label="isPolling ? 'Stop Polling' : 'Start Polling'" @click="isPolling ? stopPolling() : startPolling()" v-if="isViewMode === '9004'"/>
+        <q-btn
+          v-if="isViewMode === '9004'"
+          :color="isPolling ? 'negative' : 'positive'"
+          :icon="isPolling ? 'pause' : 'play_arrow'"
+          :label="isPolling ? 'Stop Polling' : 'Start Polling'"
+          @click="isPolling ? stopPolling() : startPolling()"
+        />
 
-        <q-btn color="grey-8" icon="arrow_back" label="Back" @click="router.back()" />
+        <q-btn
+          color="indigo"
+          icon="cleaning_services"
+          label="Reset"
+          :loading="loading"
+          @click="resetDraft"
+          v-if="isViewMode === '9004'"
+        />
+
+        <q-btn
+          color="grey-8"
+          icon="arrow_back"
+          label="Back"
+          @click="router.back()"
+        />
       </div>
     </div>
 
@@ -41,23 +69,23 @@
           <div>
             <div class="status-label">Active Side</div>
             <div class="status-value">
-              {{ xpressionDraft?.meta?.active_side }}
+              {{ activeSideLabel }}
             </div>
           </div>
 
           <div>
             <div class="status-label">Completed</div>
             <div class="status-value">
-              {{ xpressionDraft?.meta?.completed_steps ?? draftSlots.length }}
+              {{ xpressionDraft?.meta?.completed_steps ?? lockedCount }}
               /
-              {{ xpressionDraft?.meta?.total_steps ?? 12 }}
+              {{ xpressionDraft?.meta?.total_steps ?? draftSlots.length }}
             </div>
           </div>
 
           <div>
             <div class="status-label">Timer</div>
             <div class="status-value">
-              {{ xpressionDraft?.Timer?.remaining ?? 20 }}s
+              {{ xpressionDraft?.Timer?.remaining ?? 25 }}s
             </div>
           </div>
 
@@ -77,7 +105,7 @@
           <div>
             <div class="text-h6 text-weight-bold">Xpression Draft Payload</div>
             <div class="text-caption text-grey-5">
-              Viewer only — loop is controlled from Match Detail page
+              Viewer only — display follows /xpression/draft
             </div>
           </div>
         </div>
@@ -88,17 +116,23 @@
 
             <div class="phase-section">
               <div class="phase-title">Picks</div>
-
               <div class="slot-grid">
-                <DraftSlot v-for="slot in bluePicks" :key="`blue-pick-${slot.round}-${slot.slot}`" :draft-slot="slot" />
+                <DraftSlot
+                  v-for="draftSlot in bluePicks"
+                  :key="`blue-pick-${draftSlot.slot}-${draftSlot.round}`"
+                  :draft-slot="draftSlot"
+                />
               </div>
             </div>
 
             <div class="phase-section">
               <div class="phase-title">Bans</div>
-
               <div class="slot-grid bans">
-                <DraftSlot v-for="slot in blueBans" :key="`blue-ban-${slot.round}-${slot.slot}`" :draft-slot="slot" />
+                <DraftSlot
+                  v-for="draftSlot in blueBans"
+                  :key="`blue-ban-${draftSlot.slot}-${draftSlot.round}`"
+                  :draft-slot="draftSlot"
+                />
               </div>
             </div>
           </div>
@@ -125,7 +159,9 @@
             </div>
 
             <div class="timer-box">
-              <div class="timer-number">{{ xpressionDraft?.Timer?.remaining ?? 20 }}</div>
+              <div class="timer-number">
+                {{ xpressionDraft?.Timer?.remaining ?? 25 }}
+              </div>
               <div class="map-label">Seconds Remaining</div>
             </div>
           </div>
@@ -135,17 +171,23 @@
 
             <div class="phase-section">
               <div class="phase-title">Picks</div>
-
               <div class="slot-grid">
-                <DraftSlot v-for="slot in redPicks" :key="`red-pick-${slot.round}-${slot.slot}`" :draft-slot="slot" />
+                <DraftSlot
+                  v-for="draftSlot in redPicks"
+                  :key="`red-pick-${draftSlot.slot}-${draftSlot.round}`"
+                  :draft-slot="draftSlot"
+                />
               </div>
             </div>
 
             <div class="phase-section">
               <div class="phase-title">Bans</div>
-
               <div class="slot-grid bans">
-                <DraftSlot v-for="slot in redBans" :key="`red-ban-${slot.round}-${slot.slot}`" :draft-slot="slot" />
+                <DraftSlot
+                  v-for="draftSlot in redBans"
+                  :key="`red-ban-${draftSlot.slot}-${draftSlot.round}`"
+                  :draft-slot="draftSlot"
+                />
               </div>
             </div>
           </div>
@@ -153,8 +195,13 @@
       </q-card-section>
     </q-card>
 
-    <q-card flat bordered class="raw-card">
-      <q-expansion-item dark dense icon="data_object" label="Debug / Raw /xpression/draft Payload">
+    <q-card flat bordered class="raw-card" v-if="isViewMode === '9004'">
+      <q-expansion-item
+        dark
+        dense
+        icon="data_object"
+        label="Debug / Raw /xpression/draft Payload"
+      >
         <pre>{{ JSON.stringify(xpressionDraft, null, 2) }}</pre>
       </q-expansion-item>
     </q-card>
@@ -169,7 +216,9 @@ import { api } from 'boot/axios'
 
 const $q = useQuasar()
 const router = useRouter()
+
 const isViewMode = window.location.port
+
 const loading = ref(false)
 const isPolling = ref(false)
 const xpressionDraft = ref(buildBlankXpressionDraft())
@@ -181,32 +230,25 @@ const lastUpdatedLabel = computed(() => {
   return new Date(lastUpdatedAt.value).toLocaleTimeString()
 })
 
-const draftSlots = computed(() => xpressionDraft.value?.Draft || [])
+const draftSlots = computed(() => {
+  const slots = xpressionDraft.value?.Draft
+  return Array.isArray(slots) ? slots : []
+})
 
-const bluePicks = computed(() => getFixedSlots(1, "PICK"))
-const blueBans = computed(() => getFixedSlots(1, "BAN"))
-const redPicks = computed(() => getFixedSlots(2, "PICK"))
-const redBans = computed(() => getFixedSlots(2, "BAN"))
+const lockedCount = computed(() => {
+  return draftSlots.value.filter((slot) => slot.locked).length
+})
 
-// const bluePicks = computed(() =>
-//   draftSlots.value.filter((slot) => Number(slot.camp) === 1 && slot.type === 'PICK'),
-// )
-
-// const blueBans = computed(() =>
-//   draftSlots.value.filter((slot) => Number(slot.camp) === 1 && slot.type === 'BAN'),
-// )
-
-// const redPicks = computed(() =>
-//   draftSlots.value.filter((slot) => Number(slot.camp) === 2 && slot.type === 'PICK'),
-// )
-
-// const redBans = computed(() =>
-//   draftSlots.value.filter((slot) => Number(slot.camp) === 2 && slot.type === 'BAN'),
-// )
+const bluePicks = computed(() => getSlotsByCampAndType(1, 'PICK'))
+const blueBans = computed(() => getSlotsByCampAndType(1, 'BAN'))
+const redPicks = computed(() => getSlotsByCampAndType(2, 'PICK'))
+const redBans = computed(() => getSlotsByCampAndType(2, 'BAN'))
 
 const activeSideLabel = computed(() => {
   const meta = xpressionDraft.value?.meta || {}
-  return meta.active_side || getCampLabel(meta.active_camp)
+
+  if (meta.active_side) return meta.active_side
+  return getCampLabel(meta.active_camp)
 })
 
 const mapName = computed(() => {
@@ -219,19 +261,6 @@ const mapMode = computed(() => {
   return map.map_mode || map.mode || '-'
 })
 
-// const draftSlotRules = {
-//   0: { type: "BAN", camps: [1, 2] },
-//   1: { type: "PICK", camp: 2 },
-//   2: { type: "BAN", camp: 1 },
-//   3: { type: "PICK", camp: 1 },
-//   4: { type: "BAN", camp: 2 },
-//   5: { type: "BAN", camps: [1, 2] },
-//   6: { type: "PICK", camp: 1 },
-//   7: { type: "BAN", camp: 2 },
-//   8: { type: "PICK", camp: 2 },
-//   9: { type: "BAN", camp: 1 },
-// }
-
 const DraftSlot = defineComponent({
   name: 'DraftSlot',
   props: {
@@ -241,79 +270,82 @@ const DraftSlot = defineComponent({
     },
   },
   setup(props) {
-    return () =>
-      h(
+    return () => {
+      const draftSlot = props.draftSlot || {}
+      const hero = draftSlot.hero || {}
+
+      return h(
         'div',
         {
           class: [
             'draft-slot',
-            props.draftSlot?.type?.toLowerCase(),
-            props.draftSlot?.hero?.id ? 'locked' : 'empty',
+            String(draftSlot.type || '').toLowerCase(),
+            draftSlot.locked ? 'locked' : 'empty',
+            draftSlot.is_no_selection ? 'no-selection' : '',
           ],
         },
         [
-          // h('div', { class: 'slot-top' }, [
-          //   h('span', props.draftSlot?.slot),
-          //   h('span', props.draftSlot?.type),
-          // ]),
+          h('div', { class: 'slot-top' }, [
+            h('span', draftSlot.slot || '-'),
+            h('span', draftSlot.type || '-'),
+          ]),
 
           h('div', { class: 'hero-frame' }, [
             h('img', {
               class: 'hero-img',
-              src: getHeroImage(props.draftSlot?.hero),
-              alt: props.draftSlot?.hero?.name || 'Hero',
+              src: getHeroImage(hero),
+              alt: hero.name || 'Hero',
               onError: (event) => {
                 event.target.src = '/imgs/heroes/empty.png'
               },
             }),
           ]),
 
-          h('div', { class: 'hero-name' }, props.draftSlot?.hero?.name || 'Hero 0'),
-          h('div', { class: 'hero-role' }, props.draftSlot?.hero?.role || 'Unknown'),
+          h('div', { class: 'hero-name' }, getDisplayHeroName(hero, draftSlot)),
+          h('div', { class: 'hero-role' }, hero.role || 'Unknown'),
         ],
       )
+    }
   },
 })
 
-function getFixedSlots(camp, type) {
-  const expectedRounds = [
-    { round: 0, type: "BAN", camp: 1 },
-    { round: 0, type: "BAN", camp: 2 },
-    { round: 1, type: "PICK", camp: 1 },
-    { round: 2, type: "BAN", camp: 2 },
-    { round: 3, type: "PICK", camp: 2 },
-    { round: 4, type: "BAN", camp: 1 },
-    { round: 5, type: "BAN", camp: 1 },
-    { round: 5, type: "BAN", camp: 2 },
-    { round: 6, type: "PICK", camp: 2 },
-    { round: 7, type: "BAN", camp: 1 },
-    { round: 8, type: "PICK", camp: 1 },
-    { round: 9, type: "BAN", camp: 2 },
-  ]
-
-  return expectedRounds
-    .filter((slot) => slot.camp === camp && slot.type === type)
-    .map((slot, index) => {
-      const found = xpressionDraft.value?.Draft?.find(
-        (d) =>
-          Number(d.round) === slot.round &&
-          Number(d.camp) === slot.camp &&
-          d.type === slot.type
+function getSlotsByCampAndType(camp, type) {
+  return draftSlots.value
+    .filter((slot) => {
+      return (
+        Number(slot.camp) === Number(camp) &&
+        String(slot.type).toUpperCase() === String(type).toUpperCase()
       )
-
-      return found || {
-        round: slot.round,
-        camp: slot.camp,
-        type: slot.type,
-        slot: `${camp === 1 ? "Blue" : "Red"} ${index + 1}`,
-        hero: {
-          id: 0,
-          name: "",
-          role: "",
-        },
-        empty: true,
-      }
     })
+    .sort((a, b) => {
+      const aIndex = getSlotSortIndex(a)
+      const bIndex = getSlotSortIndex(b)
+
+      if (aIndex !== bIndex) return aIndex - bIndex
+
+      return Number(a.round || 0) - Number(b.round || 0)
+    })
+}
+
+function getSlotSortIndex(slot = {}) {
+  const label = String(slot.slot || '')
+  const match = label.match(/(\d+)/)
+
+  if (match) return Number(match[1])
+
+  return Number(slot.round || 0)
+}
+
+function getDisplayHeroName(hero = {}, draftSlot = {}) {
+  const id = Number(hero.id || 0)
+  const type = String(draftSlot.type || '').toUpperCase()
+
+  if (!id && draftSlot.locked) {
+    if (type === 'PICK') return 'NO PICK'
+    if (type === 'BAN') return 'NO BAN'
+  }
+
+  return hero.name || 'Hero 0'
 }
 
 function toHeroFileName(name = '') {
@@ -327,101 +359,236 @@ function getHeroImage(hero = {}) {
   if (hero?.image) return hero.image
 
   const id = Number(hero?.id || 0)
-  if (!id) return '/imgs/heroes/empty.png'
 
-  const imageId = id === 10571 || id === 10572 || id === 10573 ? 1057 : id
+  if (!id) {
+    return '/imgs/heroes/empty.png'
+  }
+
+  const imageId = getHeroBaseId(id)
   const name = hero?.name || `Hero ${id}`
 
   return `/imgs/heroes/${imageId}_${toHeroFileName(name)}.png`
 }
 
+function getHeroBaseId(heroId) {
+  const id = Number(heroId)
+
+  if (id === 10571 || id === 10572 || id === 10573) {
+    return 1057
+  }
+
+  return id
+}
+
 function getCampLabel(camp) {
+  if (camp === 'BOTH') return 'Both'
   if (Number(camp) === 1) return 'Blue'
   if (Number(camp) === 2) return 'Red'
-  if (camp === 'BOTH') return 'Both'
   return '-'
 }
 
-// function buildDraftPlan() {
-//   const first = 2
-//   const second = 1
-
-//   return {
-//     rounds: [
-//       { round_index: 0, phase: 'BAN', camp: 'BOTH' },
-//       { round_index: 1, phase: 'PICK', camp: first },
-//       { round_index: 2, phase: 'BAN', camp: second },
-//       { round_index: 3, phase: 'PICK', camp: second },
-//       { round_index: 4, phase: 'BAN', camp: first },
-//       { round_index: 5, phase: 'BAN', camp: 'BOTH' },
-//       { round_index: 6, phase: 'PICK', camp: second },
-//       { round_index: 7, phase: 'BAN', camp: first },
-//       { round_index: 8, phase: 'PICK', camp: first },
-//       { round_index: 9, phase: 'BAN', camp: second },
-//     ],
-//   }
-// }
-function buildDraftPlan() {
-  return {
-    rounds: [
-      { round_index: 0, phase: 'BAN', camp: 'BOTH' },
-      { round_index: 1, phase: 'PICK', camp: 1 },
-      { round_index: 2, phase: 'BAN', camp: 2 },
-      { round_index: 3, phase: 'PICK', camp: 2 },
-      { round_index: 4, phase: 'BAN', camp: 1 },
-      { round_index: 5, phase: 'BAN', camp: 'BOTH' },
-      { round_index: 6, phase: 'PICK', camp: 2 },
-      { round_index: 7, phase: 'BAN', camp: 1 },
-      { round_index: 8, phase: 'PICK', camp: 1 },
-      { round_index: 9, phase: 'BAN', camp: 2 },
-    ],
-  }
-}
-
-
 function buildEmptyDraftSkeleton() {
-  const plan = buildDraftPlan()
-  const slotCounter = { 1: 0, 2: 0 }
-
-  return plan.rounds.flatMap((round) => {
-    const camps = round.camp === 'BOTH' ? [1, 2] : [Number(round.camp)]
-
-    return camps.map((camp) => {
-      slotCounter[camp] += 1
-
-      return {
-        round: Number(round.round_index),
-        type: round.phase,
-        camp,
-        slot: camp === 1 ? `Blue ${slotCounter[camp]}` : `Red ${slotCounter[camp]}`,
-        hero: {
-          id: 0,
-          name: 'Hero 0',
-          role: 'Unknown',
-          image: '/imgs/heroes/empty.png',
-        },
-      }
-    })
-  })
+  return [
+    {
+      round: 0,
+      type: 'BAN',
+      camp: 2,
+      slot: 'Red 1',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 0,
+      type: 'BAN',
+      camp: 1,
+      slot: 'Blue 1',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 1,
+      type: 'PICK',
+      camp: 1,
+      slot: 'Blue 2',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 2,
+      type: 'BAN',
+      camp: 2,
+      slot: 'Red 2',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 3,
+      type: 'PICK',
+      camp: 2,
+      slot: 'Red 3',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 4,
+      type: 'BAN',
+      camp: 1,
+      slot: 'Blue 3',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 5,
+      type: 'BAN',
+      camp: 2,
+      slot: 'Red 4',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 5,
+      type: 'BAN',
+      camp: 1,
+      slot: 'Blue 4',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 6,
+      type: 'PICK',
+      camp: 2,
+      slot: 'Red 5',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 7,
+      type: 'BAN',
+      camp: 1,
+      slot: 'Blue 5',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 8,
+      type: 'PICK',
+      camp: 1,
+      slot: 'Blue 6',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+    {
+      round: 9,
+      type: 'BAN',
+      camp: 2,
+      slot: 'Red 6',
+      hero: {
+        id: 0,
+        name: 'Hero 0',
+        role: 'Unknown',
+        image: '/imgs/heroes/empty.png',
+      },
+      locked: false,
+      is_no_selection: false,
+    },
+  ]
 }
 
 function buildBlankXpressionDraft() {
+  const Draft = buildEmptyDraftSkeleton()
+
   return {
     Map: {},
     Timer: {
-      phase_seconds: 20,
-      remaining: 20,
+      phase_seconds: 25,
+      remaining: 25,
+      elapsed: 0,
+      is_running: false,
     },
-    Draft: buildEmptyDraftSkeleton(),
+    Draft,
     meta: {
       current_round: -1,
-      phase: 'BAN',
+      phase: '-',
       active_camp: null,
       active_side: '-',
+      is_complete: false,
       completed_steps: 0,
-      total_steps: 12,
+      total_steps: Draft.length,
     },
+    source: 'blank',
   }
+}
+
+async function resetDraft() {
+  stopPolling()
+  xpressionDraft.value = buildBlankXpressionDraft()
+  lastUpdatedAt.value = Date.now()
 }
 
 async function loadDraft() {
@@ -430,15 +597,11 @@ async function loadDraft() {
   try {
     const response = await api.get('/xpression/draft')
 
-    if (response.data?.Draft) {
-      xpressionDraft.value = response.data
-    } else {
-      xpressionDraft.value = {
-        ...buildBlankXpressionDraft(),
-        message: response.data?.message || 'No draft payload yet',
-      }
-    }
+    const rawPayload = response.data?.data?.Map
+      ? response.data.data
+      : response.data || {}
 
+    xpressionDraft.value = normalizeDraftResponse(rawPayload)
     lastUpdatedAt.value = Date.now()
   } catch (err) {
     console.error('Failed to load Xpression draft:', err)
@@ -452,10 +615,159 @@ async function loadDraft() {
   }
 }
 
+function normalizeDraftResponse(payload = {}) {
+  const Draft = extractDraftSlots(payload)
+
+  return {
+    ...payload,
+
+    Draft,
+
+    Timer: {
+      phase_seconds: Number(payload.Timer?.phase_seconds ?? 25),
+      remaining: Number(payload.Timer?.remaining ?? 25),
+      elapsed: Number(payload.Timer?.elapsed ?? 0),
+      is_running: Boolean(payload.Timer?.is_running),
+    },
+
+    meta: {
+      current_round: payload.meta?.current_round ?? -1,
+      phase: payload.meta?.phase || '-',
+      active_camp: payload.meta?.active_camp ?? null,
+      active_side:
+        payload.meta?.active_side ||
+        getCampLabel(payload.meta?.active_camp),
+      is_complete: Boolean(payload.meta?.is_complete),
+      completed_steps: Number(
+        payload.meta?.completed_steps ??
+          Draft.filter((slot) => slot.locked).length,
+      ),
+      total_steps: Number(payload.meta?.total_steps ?? Draft.length),
+    },
+
+    Map: payload.Map || {},
+  }
+}
+
+function extractDraftSlots(payload = {}) {
+  if (Array.isArray(payload.Draft)) {
+    return payload.Draft.map(normalizeDraftSlot)
+  }
+
+  const slotKeys = Object.keys(payload).filter((key) =>
+    /^(blue|red)_\d+$/i.test(key),
+  )
+
+  if (!slotKeys.length) {
+    return buildEmptyDraftSkeleton()
+  }
+
+  return slotKeys
+    .map((key) => {
+      const rawSlot = payload[key] || {}
+
+      return normalizeDraftSlot({
+        ...rawSlot,
+        slot: toDisplaySlotName(key),
+      })
+    })
+    .sort((a, b) => getGlobalDraftOrder(a) - getGlobalDraftOrder(b))
+}
+
+function normalizeDraftSlot(slot = {}) {
+  const hero = slot.hero || {}
+  const type = String(slot.type || 'BAN').toUpperCase()
+  const locked = Boolean(slot.locked)
+  const isNoSelection = Boolean(slot.is_no_selection)
+
+  const heroId = Number(hero.id || 0)
+
+  let heroName = hero.name || 'Hero 0'
+
+  if (!heroId && locked) {
+    if (type === 'PICK') heroName = 'NO PICK'
+    if (type === 'BAN') heroName = 'NO BAN'
+  }
+
+  return {
+    round: Number(slot.round ?? 0),
+    type,
+    camp: Number(slot.camp || 0),
+    slot: slot.slot || '-',
+
+    hero: {
+      id: heroId,
+      name: heroName,
+      role: hero.role || (heroId ? 'Unknown' : 'None'),
+      image: hero.image,
+    },
+
+    locked,
+    is_no_selection: isNoSelection || (!heroId && locked),
+  }
+}
+
+function toDisplaySlotName(key = '') {
+  const [side, num] = String(key).split('_')
+
+  if (side === 'blue') return `Blue ${num}`
+  if (side === 'red') return `Red ${num}`
+
+  return key
+}
+
+function getGlobalDraftOrder(slot = {}) {
+  const round = Number(slot.round ?? 0)
+  const type = String(slot.type || '').toUpperCase()
+  const camp = Number(slot.camp || 0)
+
+  const order = [
+    { round: 0, type: 'BAN', camp: 2 },
+    { round: 0, type: 'BAN', camp: 1 },
+
+    { round: 1, type: 'PICK', camp: 1 },
+    { round: 1, type: 'PICK', camp: 2 },
+
+    { round: 2, type: 'BAN', camp: 2 },
+    { round: 2, type: 'BAN', camp: 1 },
+
+    { round: 3, type: 'PICK', camp: 2 },
+    { round: 3, type: 'PICK', camp: 1 },
+
+    { round: 4, type: 'BAN', camp: 1 },
+    { round: 4, type: 'BAN', camp: 2 },
+
+    { round: 5, type: 'BAN', camp: 2 },
+    { round: 5, type: 'BAN', camp: 1 },
+
+    { round: 6, type: 'PICK', camp: 2 },
+    { round: 6, type: 'PICK', camp: 1 },
+
+    { round: 7, type: 'BAN', camp: 1 },
+    { round: 7, type: 'BAN', camp: 2 },
+
+    { round: 8, type: 'PICK', camp: 1 },
+    { round: 8, type: 'PICK', camp: 2 },
+
+    { round: 9, type: 'BAN', camp: 2 },
+    { round: 9, type: 'BAN', camp: 1 },
+  ]
+
+  const index = order.findIndex((item) => {
+    return item.round === round && item.type === type && item.camp === camp
+  })
+
+  if (index !== -1) return index
+
+  return round * 10 + camp
+}
+
 function startPolling() {
   stopPolling()
+
   isPolling.value = true
   loadDraft()
+
   pollTimer.value = setInterval(loadDraft, 500)
 }
 
@@ -464,11 +776,11 @@ function stopPolling() {
     clearInterval(pollTimer.value)
     pollTimer.value = null
   }
+
   isPolling.value = false
 }
 
 onMounted(startPolling)
-
 onBeforeUnmount(stopPolling)
 </script>
 
@@ -641,6 +953,11 @@ onBeforeUnmount(stopPolling)
   opacity: 0.55;
 }
 
+:deep(.draft-slot.no-selection.locked) {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
 :deep(.slot-top) {
   position: absolute;
   z-index: 2;
@@ -673,6 +990,10 @@ onBeforeUnmount(stopPolling)
 
 :deep(.draft-slot.ban .hero-img) {
   filter: grayscale(1) brightness(0.48);
+}
+
+:deep(.draft-slot.no-selection .hero-img) {
+  filter: grayscale(1) brightness(0.28);
 }
 
 :deep(.hero-name) {

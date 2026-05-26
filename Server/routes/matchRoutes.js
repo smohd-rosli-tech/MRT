@@ -57,6 +57,27 @@ router.get('/', async (req, res) => {
  * GET /api/matches/:match_uid
  * Get full match by UID
  */
+// router.get('/:id', async (req, res) => {
+//   try {
+//     const { id } = req.params
+
+//     const match = await Match.findOne({ _id: id }).lean()
+
+//     if (!match) {
+//       dbLogger.warn(`Match not found: ${id}`)
+//       return res.status(404).json({ message: 'Match not found' })
+//     }
+
+//     res.json(match)
+//   } catch (err) {
+//     dbLogger.error(`Error fetching match ${req.params.id}:`, err)
+//     res.status(500).json({
+//       message: 'Failed to get match',
+//       error: err.message,
+//     })
+//   }
+// })
+
 router.get('/:match_uid', async (req, res) => {
   try {
     const { match_uid } = req.params

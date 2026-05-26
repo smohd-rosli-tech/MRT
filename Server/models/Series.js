@@ -45,7 +45,11 @@ const SeriesSchema = new Schema(
       default: () => ({ camp: 2 }),
     },
 
-    // ✅ ONLY STORE MATCH_UIDS
+    region: {
+      type: String,
+      default: 'GLOBAL',
+    },
+
     matches: {
       type: [String],
       default: [],

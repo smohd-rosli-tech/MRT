@@ -133,7 +133,7 @@
         },
         "transformation_id": "0"
       },
-      
+
       {
         "id": 101196,
         "icon": "/abilities/101196.webp",
@@ -11816,7 +11816,802 @@
         "transformation_id": "1"
       }
     ]
-  },  
+  },
+  {
+    "id": "1061",
+    "name": "black cat",
+    "real_name": "Felicia Hardy",
+    "imageUrl": "/rivals/heroes/card/black-cat.png",
+    "role": "Duelist",
+    "attack_type": "0",
+    "team": ["Villains"],
+    "difficulty": "4",
+    "bio": "One of the world's premier thieves, Felicia Hardy glides across the battlefield with swift precision and a dancer's grace, ever ready to purloin an opponent's fortune. Those who meet the Black Cat's gaze should beware, as her omens never miss their mark!",
+    "lore": "No lore available",
+    "transformations": [
+      {
+        "id": "0",
+        "name": "Black Cat",
+        "icon": "/heroes/transformations/black-cat-headbig-0.webp",
+        "health": "275",
+        "movement_speed": "600"
+      },
+      {
+        "id": "1",
+        "name": "Black Cat",
+        "icon": "/heroes/transformations/black-cat-headbig-1.webp",
+        "health": null,
+        "movement_speed": null
+      }
+    ],
+    "costumes": [
+      {
+        "id": "1061001",
+        "name": "Black Cat",
+        "icon": "/costumes/black-cat-1061001.png",
+        "quality": "NO_QUALITY",
+        "description": "0",
+        "appearance": "0"
+      },
+      {
+        "id": "1061100",
+        "name": "Gilded Shadow",
+        "icon": "/costumes/gilded-shadow-1061100.png",
+        "quality": "NO_QUALITY",
+        "description": "0",
+        "appearance": "0"
+      },
+      {
+        "id": "1061101",
+        "name": "Beguiling Blue",
+        "icon": "/costumes/beguiling-blue-1061101.png",
+        "quality": "NO_QUALITY",
+        "description": "0",
+        "appearance": "0"
+      },
+      {
+        "id": "1061300",
+        "name": "Urban Predator",
+        "icon": "/costumes/urban-predator-1061300.png",
+        "quality": "NO_QUALITY",
+        "description": "0",
+        "appearance": "0"
+      }
+    ],
+    "abilities": [
+      {
+        "id": 106101,
+        "icon": "/abilities/106101.webp",
+        "name": "Stealthy Catwalk",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Hold {Jump} to crawl up vertical surfaces.",
+        "additional_fields": {
+          "Key": "Space"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106103,
+        "icon": "/abilities/106103.webp",
+        "name": "Sticky Paws",
+        "type": "Passive",
+        "isCollab": false,
+        "description": "Steal a set amount of <Orange>Fortune</> whenever your attacks hit an enemy.",
+        "additional_fields": {
+          "Key": "PASSIVE",
+          "Fortune Lost Upon Death": "Lose 50% of Fortune when defeated, with a minimum deduction of 200",
+          "Fortune Gained per Hit (Calling Card)": "300",
+          "Fortune Gained per Hit (Turn of Fortune)": "300",
+          "Fortune Gained per Target Hit (Claw Whip)": "50, up to 100",
+          "Fortune Gained per Target Hit (Feline Fury)": "50, up to 50",
+          "Fortune Gained per Target Hit (Phantom Pursuit)": "150, up to 150"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106111,
+        "icon": "/abilities/106111.webp",
+        "name": "Thieving Grace",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Perform a double jump.",
+        "additional_fields": {
+          "Key": "Space"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106121,
+        "icon": "/abilities/106121.webp",
+        "name": "Feline Fury",
+        "type": "Weapon",
+        "isCollab": false,
+        "description": "Swipe forward with razor-sharp claws.",
+        "additional_fields": {
+          "Key": "Left Click",
+          "Damage": "35",
+          "Casting": "Melee",
+          "Maximum Distance": "3.5m"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106131,
+        "icon": "/abilities/106131.webp",
+        "name": "Fortune's Favor",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Spend <Orange>Fortune</> to unleash either <Orange>Claw Whip</> or <Orange>Phantom Pursuit</>.",
+        "additional_fields": {
+          "Key": "Right Click",
+          "Grapple Swipe Fortune Consumption": "150",
+          "Phantom Pursuit Fortune Consumption": "300"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106132,
+        "icon": "/abilities/106132.webp",
+        "name": "Claw Whip",
+        "type": "Weapon",
+        "isCollab": false,
+        "description": "Fire out tethered claws and whip them forward in a devastating arc, dealing damage to all enemies caught in range.",
+        "additional_fields": {
+          "Key": "Left Click",
+          "Damage Falloff": "Falloff begins at 30°, drop to 30% of maximum damage at 75°",
+          "Attack Interval": "0.6s per hit",
+          "Max Bonus Health": "50",
+          "Spell Field Range": "150° cone spell field with a radius of 7.5m and a height of 2.5m",
+          "Spell Field Damage": "65",
+          "Bonus Health Per Hit": "25"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106133,
+        "icon": "/abilities/106133.webp",
+        "name": "Phantom Pursuit",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Swiftly dash to an enemy, unleash a rapid flurry of claw attacks, and flash back to your starting position. Black Cat is <Buff>Untargetable</> during this move.",
+        "additional_fields": {
+          "Key": "E",
+          "Damage": "75",
+          "Cooldown": "2s",
+          "Dash Duration": "0.25s",
+          "Maximum Dash Distance": "20m"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106141,
+        "icon": "/abilities/106141.webp",
+        "name": "Turn Of Fortune",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Launch a grappling hook forward that damages an enemy on impact and steals <Orange>Fortune</>.",
+        "additional_fields": {
+          "Key": "E",
+          "Cooldown": "5s",
+          "Hook Speed": "120m/s",
+          "Hook Damage": "30",
+          "Hook Maximum Distance": "30m",
+          "Bonus Health from Hook Hit": "50"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106151,
+        "icon": "/abilities/106151.webp",
+        "name": "Cat's Cradle",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Lunge forward with claws bared, slicing through any enemies caught in your path.",
+        "additional_fields": {
+          "Key": "Shift",
+          "Damage": "50",
+          "Cooldown": "2 charges, with each charge taking 10s to recharge",
+          "Maximum Dash Distance": "15m"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106161,
+        "icon": "/abilities/106161.webp",
+        "name": "Gilded Deal",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Open a dimensional rift via the Randall Gate. Spend <Orange>Fortune</> to barter with the Gilded Saint for rare relics from the New York Thieves Guild Vault.",
+        "additional_fields": {
+          "Key": "F"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106162,
+        "icon": "/abilities/106162.webp",
+        "name": "Tablet Of Destinies",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Gain a random amount of <Orange>Fortune</>.",
+        "additional_fields": {
+          "Key": "F",
+          "Special Effect": "Gain 0/50/200/500 Fortune randomly",
+          "Fortune Consumption": "100"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106163,
+        "icon": "/abilities/106163.webp",
+        "name": "Helm Of Hades",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Enter <Buff>Invisible</> state for a set duration.",
+        "additional_fields": {
+          "Key": "F",
+          "Movement Boost": "60%, drop to 0 in 2s",
+          "Fortune Consumption": "200",
+          "Invisibility Duration": "2s",
+          "Movement Speed Boost Duration": "2s"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106164,
+        "icon": "/abilities/106164.webp",
+        "name": "Faltine Flame Orb",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Conjure an orb of mystical Faltine Flame to <Buff>Reveal</> and mark all nearby enemies.",
+        "additional_fields": {
+          "Key": "F",
+          "Summon Health": "50",
+          "Fortune Consumption": "100",
+          "Maximum Reveal Distance": "20m",
+          "Maximum Summon Quantity": "1"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106165,
+        "icon": "/abilities/106165.webp",
+        "name": "Chernobog's Crystal",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Purify yourself, instantly removing any active control effects.",
+        "additional_fields": {
+          "Key": "F",
+          "Special Effect": "Remove any active control effects",
+          "Fortune Consumption": "200"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106166,
+        "icon": "/abilities/106166.webp",
+        "name": "Ring Of Zona",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Open a portal on a surface, allowing instant traversal to the opposite side.",
+        "additional_fields": {
+          "Key": "F",
+          "Fortune Consumption": "200"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106167,
+        "icon": "/abilities/106167.webp",
+        "name": "Hypno-fish",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Create a hypnosis field. Disables movement abilities, and <Debuff>Grounds</> all enemies caught within.",
+        "transformation_id": "0"
+      },
+      {
+        "id": 106171,
+        "icon": "/abilities/106171.webp",
+        "name": "Calling Card",
+        "type": "Ultimate",
+        "isCollab": false,
+        "description": "Issue a Calling Card to all enemies. Instantly dash to any enemy in sight and range, tearing into them with your claws to deal Percentage Damage.",
+        "additional_fields": {
+          "Key": "Q",
+          "Energy Cost": "3100",
+          "Ability Duration": "10s",
+          "Maximum Dash Distance": "60m",
+          "1st Claw Strike Damage": "30",
+          "2nd Claw Strike Damage": "30+20% Target's Maximum Health",
+          "Maximum Targeting Distance": "8m",
+          "Fore-swing Damage Reduction": "50%"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106181,
+        "name": "Gift Of Gold",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Black Cat shares her luck with her allies. When White Fox embraces her newfound fortune, she unleashes tracking <Orange>Spirit Tails</> to grant <Buff>Healing</> and <Buff>Speed</> to allies, while damaging and <Debuff>Slowing</> foes. \nWhen Captain America enjoys his luck, his shield's block radius expands and allows him to aim deflected <Orange>Projectiles</> directly toward his target.",
+        "additional_fields": {
+          "Key": "Passive",
+          "Team-Up Bonus": "5% Damage Boost"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106101,
+        "icon": "/abilities/106101.webp",
+        "name": "Stealthy Catwalk",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Hold {Jump} to crawl up vertical surfaces.",
+        "additional_fields": {
+          "Key": "Space"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106103,
+        "icon": "/abilities/106103.webp",
+        "name": "Sticky Paws",
+        "type": "Passive",
+        "isCollab": false,
+        "description": "Steal a set amount of <Orange>Fortune</> whenever your attacks hit an enemy.",
+        "additional_fields": {
+          "Key": "PASSIVE",
+          "Fortune Lost Upon Death": "Lose 50% of Fortune when defeated, with a minimum deduction of 200",
+          "Fortune Gained per Hit (Calling Card)": "300",
+          "Fortune Gained per Hit (Turn of Fortune)": "300",
+          "Fortune Gained per Target Hit (Claw Whip)": "50, up to 100",
+          "Fortune Gained per Target Hit (Feline Fury)": "50, up to 50",
+          "Fortune Gained per Target Hit (Phantom Pursuit)": "150, up to 150"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106111,
+        "icon": "/abilities/106111.webp",
+        "name": "Thieving Grace",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Perform a double jump.",
+        "additional_fields": {
+          "Key": "Space"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106121,
+        "icon": "/abilities/106121.webp",
+        "name": "Feline Fury",
+        "type": "Weapon",
+        "isCollab": false,
+        "description": "Swipe forward with razor-sharp claws.",
+        "additional_fields": {
+          "Key": "Left Click",
+          "Damage": "35",
+          "Casting": "Melee",
+          "Maximum Distance": "3.5m"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106131,
+        "icon": "/abilities/106131.webp",
+        "name": "Fortune's Favor",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Spend <Orange>Fortune</> to unleash either <Orange>Claw Whip</> or <Orange>Phantom Pursuit</>.",
+        "additional_fields": {
+          "Key": "Right Click",
+          "Grapple Swipe Fortune Consumption": "150",
+          "Phantom Pursuit Fortune Consumption": "300"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106132,
+        "icon": "/abilities/106132.webp",
+        "name": "Claw Whip",
+        "type": "Weapon",
+        "isCollab": false,
+        "description": "Fire out tethered claws and whip them forward in a devastating arc, dealing damage to all enemies caught in range.",
+        "additional_fields": {
+          "Key": "Left Click",
+          "Damage Falloff": "Falloff begins at 30°, drop to 30% of maximum damage at 75°",
+          "Attack Interval": "0.6s per hit",
+          "Max Bonus Health": "50",
+          "Spell Field Range": "150° cone spell field with a radius of 7.5m and a height of 2.5m",
+          "Spell Field Damage": "65",
+          "Bonus Health Per Hit": "25"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106133,
+        "icon": "/abilities/106133.webp",
+        "name": "Phantom Pursuit",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Swiftly dash to an enemy, unleash a rapid flurry of claw attacks, and flash back to your starting position. Black Cat is <Buff>Untargetable</> during this move.",
+        "additional_fields": {
+          "Key": "E",
+          "Damage": "75",
+          "Cooldown": "2s",
+          "Dash Duration": "0.25s",
+          "Maximum Dash Distance": "20m"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106141,
+        "icon": "/abilities/106141.webp",
+        "name": "Turn Of Fortune",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Launch a grappling hook forward that damages an enemy on impact and steals <Orange>Fortune</>.",
+        "additional_fields": {
+          "Key": "E",
+          "Cooldown": "5s",
+          "Hook Speed": "120m/s",
+          "Hook Damage": "30",
+          "Hook Maximum Distance": "30m",
+          "Bonus Health from Hook Hit": "50"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106151,
+        "icon": "/abilities/106151.webp",
+        "name": "Cat's Cradle",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Lunge forward with claws bared, slicing through any enemies caught in your path.",
+        "additional_fields": {
+          "Key": "Shift",
+          "Damage": "50",
+          "Cooldown": "2 charges, with each charge taking 10s to recharge",
+          "Maximum Dash Distance": "15m"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106161,
+        "icon": "/abilities/106161.webp",
+        "name": "Gilded Deal",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Open a dimensional rift via the Randall Gate. Spend <Orange>Fortune</> to barter with the Gilded Saint for rare relics from the New York Thieves Guild Vault.",
+        "additional_fields": {
+          "Key": "F"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106162,
+        "icon": "/abilities/106162.webp",
+        "name": "Tablet Of Destinies",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Gain a random amount of <Orange>Fortune</>.",
+        "additional_fields": {
+          "Key": "F",
+          "Special Effect": "Gain 0/50/200/500 Fortune randomly",
+          "Fortune Consumption": "100"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106163,
+        "icon": "/abilities/106163.webp",
+        "name": "Helm Of Hades",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Enter <Buff>Invisible</> state for a set duration.",
+        "additional_fields": {
+          "Key": "F",
+          "Movement Boost": "60%, drop to 0 in 2s",
+          "Fortune Consumption": "200",
+          "Invisibility Duration": "2s",
+          "Movement Speed Boost Duration": "2s"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106164,
+        "icon": "/abilities/106164.webp",
+        "name": "Faltine Flame Orb",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Conjure an orb of mystical Faltine Flame to <Buff>Reveal</> and mark all nearby enemies.",
+        "additional_fields": {
+          "Key": "F",
+          "Summon Health": "50",
+          "Fortune Consumption": "100",
+          "Maximum Reveal Distance": "20m",
+          "Maximum Summon Quantity": "1"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106165,
+        "icon": "/abilities/106165.webp",
+        "name": "Chernobog's Crystal",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Purify yourself, instantly removing any active control effects.",
+        "additional_fields": {
+          "Key": "F",
+          "Special Effect": "Remove any active control effects",
+          "Fortune Consumption": "200"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106166,
+        "icon": "/abilities/106166.webp",
+        "name": "Ring Of Zona",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Open a portal on a surface, allowing instant traversal to the opposite side.",
+        "additional_fields": {
+          "Key": "F",
+          "Fortune Consumption": "200"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106167,
+        "icon": "/abilities/106167.webp",
+        "name": "Hypno-fish",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Create a hypnosis field. Disables movement abilities, and <Debuff>Grounds</> all enemies caught within.",
+        "transformation_id": "1"
+      },
+      {
+        "id": 106171,
+        "icon": "/abilities/106171.webp",
+        "name": "Calling Card",
+        "type": "Ultimate",
+        "isCollab": false,
+        "description": "Issue a Calling Card to all enemies. Instantly dash to any enemy in sight and range, tearing into them with your claws to deal Percentage Damage.",
+        "additional_fields": {
+          "Key": "Q",
+          "Energy Cost": "3100",
+          "Ability Duration": "10s",
+          "Maximum Dash Distance": "60m",
+          "1st Claw Strike Damage": "30",
+          "2nd Claw Strike Damage": "30+20% Target's Maximum Health",
+          "Maximum Targeting Distance": "8m",
+          "Fore-swing Damage Reduction": "50%"
+        },
+        "transformation_id": "1"
+      },
+      {
+        "id": 106181,
+        "name": "Gift Of Gold",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Black Cat shares her luck with her allies. When White Fox embraces her newfound fortune, she unleashes tracking <Orange>Spirit Tails</> to grant <Buff>Healing</> and <Buff>Speed</> to allies, while damaging and <Debuff>Slowing</> foes. \nWhen Captain America enjoys his luck, his shield's block radius expands and allows him to aim deflected <Orange>Projectiles</> directly toward his target.",
+        "additional_fields": {
+          "Key": "Passive",
+          "Team-Up Bonus": "5% Damage Boost"
+        },
+        "transformation_id": "1"
+      }
+    ]
+  },
+  {
+    "id": "1062",
+    "name": "devil dinosaur",
+    "real_name": "Devil Dinosaur",
+    "imageUrl": "/rivals/heroes/card/devil-dinosaur.png",
+    "role": "Vanguard",
+    "attack_type": "0",
+    "team": [],
+    "difficulty": "3",
+    "bio": "Don't let his name scare you — Devil Dinosaur is actually a gentle giant. But with razor-sharp fangs, a mighty sweeping tail, a thunderous roar, and a force-field shield gifted by his human partner Moon Girl, it's no wonder why heroes and villains alike are intimidated by this prehistoric powerhouse!",
+    "lore": "No lore available",
+    "transformations": [
+      {
+        "id": "0",
+        "name": "Devil Dinosaur",
+        "icon": "/heroes/transformations/devil-dinosaur-headbig-0.webp",
+        "health": "750",
+        "movement_speed": "600"
+      }
+    ],
+    "costumes": [
+      {
+        "id": "1062001",
+        "name": "Devil Dinosaur",
+        "icon": "/costumes/devil-dinosaur-1062001.png",
+        "quality": "NO_QUALITY",
+        "description": "0",
+        "appearance": "0"
+      },
+      {
+        "id": "1062100",
+        "name": "Tropical Beast",
+        "icon": "/costumes/tropical-beast-1062100.png",
+        "quality": "NO_QUALITY",
+        "description": "0",
+        "appearance": "0"
+      },
+      {
+        "id": "1062101",
+        "name": "Corporate Cruncher",
+        "icon": "/costumes/corporate-cruncher-1062101.png",
+        "quality": "NO_QUALITY",
+        "description": "0",
+        "appearance": "0"
+      },
+      {
+        "id": "1062500",
+        "name": "Chrono Armor",
+        "icon": "/costumes/chrono-armor-1062500.png",
+        "quality": "NO_QUALITY",
+        "description": "0",
+        "appearance": "0"
+      }
+    ],
+    "abilities": [
+      {
+        "id": 106201,
+        "icon": "/abilities/106201.webp",
+        "name": "Prehistoric Plating",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Take reduced damage from critical hits. Immune to <Debuff>launch-up</>, <Debuff>knock-back</>, and other displacement effects. Enemies and allies generate less Ultimate Ability Energy when damaging or healing him.",
+        "additional_fields": {
+          "Key": "Passive",
+          "Headshot Damage Taken Reduction": "50%",
+          "Ultimate Energy Gain Reduction from Damage/Healing Him": "35%"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106202,
+        "name": "Apex Advantage",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Gain <Buff>Bonus Health</> when you inflict <Debuff>Bleeding</> and deal damage.",
+        "additional_fields": {
+          "Key": "Passive",
+          "Bonus Health": "150% of Bleed Damage Dealt"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106211,
+        "icon": "/abilities/106211.webp",
+        "name": "Tail Swipe",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Swing your tail to attack enemies behind you.",
+        "transformation_id": "0"
+      },
+      {
+        "id": 106221,
+        "icon": "/abilities/106221.webp",
+        "name": "Primal Bite",
+        "type": "Weapon",
+        "isCollab": false,
+        "description": "Bite forward. Applies a <Debuff>Bleed</> that deals continuous Percentage Damage.",
+        "additional_fields": {
+          "Key": "Left Click",
+          "Damage": "75",
+          "Casting": "Melee",
+          "Bleed Damage": "1.5% Maximum Health",
+          "Bleed Duration": "4s",
+          "Attack Interval": "1st and 3rd attacks: 1s; 2nd attack: 0.9s",
+          "Bleed Tick Rate": "2 times per second",
+          "Maximum Distance": "4m"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106231,
+        "icon": "/abilities/106231.webp",
+        "name": "Frenzied Feast",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Unleash a flurry of continuous bites, converting the damage dealt into <Buff>Bonus Health</>. Deals extra damage against <Debuff>Bleeding</> targets.",
+        "additional_fields": {
+          "Key": "F",
+          "Cooldown": "8s",
+          "Bite Damge": "First 4 hits: 15 each; 5th hit: 30",
+          "Bonus Damage": "First 4 hits: 5% Maximum Health each; 5th hit: 10% Maximum Health"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106241,
+        "icon": "/abilities/106241.webp",
+        "name": "Savage Predation",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Dash and pounce on your prey with a vicious bite, applying a <Debuff>Bleed</>. If the target is already <Debuff>Bleeding</>, clamp down before hurling them away.",
+        "additional_fields": {
+          "Key": "Shift",
+          "Cooldown": "10s",
+          "Bite Damage": "50",
+          "Dash Duration": "2s",
+          "Dashing Speed": "15m/s"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106251,
+        "icon": "/abilities/106251.webp",
+        "name": "Buddy Barrier",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Activate the heart-shaped generator to expand a spherical shield that blocks incoming damage. Enemies caught within are <Debuff>Slowed</>.",
+        "additional_fields": {
+          "Key": "E",
+          "Cooldown": "10s",
+          "Slow Effect": "15% for 2s",
+          "Summons Max Health": "450",
+          "Maximum Duration for Summons": "6s"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106261,
+        "icon": "/abilities/106261.webp",
+        "name": "Impact Beam",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Unleash a devastating beam of energy that inflicts a <Debuff>Bleed</> and <Debuff>Slow</>. <Debuff>Knocks Down</> airborne targets.",
+        "additional_fields": {
+          "Key": "Right Click",
+          "Slow Effect": "15% for 2s",
+          "Attack Range": "17m",
+          "Ability Duration": "3.3s",
+          "Spell Field Damage": "40/s",
+          "Spell Field Radius": "1.2m"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106271,
+        "icon": "/abilities/106271.webp",
+        "name": "Devil-beast Rampage",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "Erupt in primal fury! Gain a massive <Buff>Movement Speed Boost</> while unleashing earth-shattering stomps that <Debuff>Launch</> enemies and apply a <Debuff>Bleed</>. Thunderous roars also emit sonic waves that <Debuff>Slow</> enemies hit.",
+        "additional_fields": {
+          "Key": "Q",
+          "Energy Cost": "3400",
+          "Stomp Field Range": "8m radius spherical spell field",
+          "Stomp Field Damage": "10",
+          "Stomp Field Spawn Interval": "0.3",
+          "Speed Boost During Ultimate": "70%",
+          "Stomp Field Launch-up Interval": "0.8s",
+          "Frenzied Feast Cooldown Reduction": "1s",
+          "Savage Predation Cooldown Reduction": "4s"
+        },
+        "transformation_id": "0"
+      },
+      {
+        "id": 106281,
+        "name": "Prehistoric Partner",
+        "type": "Normal",
+        "isCollab": false,
+        "description": "The Punisher rides atop Devil Dinosaur, restricting him to only Adjudication/Deliverance and Scourge Grenade while disabling other abilities. While mounted, The Punisher gains <Buff>Damage Reduction</>; Devil Dinosaur absorbs a portion of all damage inflicted on The Punisher and shares some of his healing received.",
+        "additional_fields": {
+          "Key": "Passive",
+          "Team-Up Bonus": "Maximum Health +100"
+        },
+        "transformation_id": "0"
+      }
+    ]
+  },
   {
     "id": "1065",
     "name": "rogue",

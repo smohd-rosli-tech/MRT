@@ -216,7 +216,7 @@ function processLiveData(rawLiveData = {}, { heroMap = {}, mapMap = {} } = {}) {
   return {
     meta: {
       mapId,
-      mapName: mapMeta?.full_name || mapMeta?.name || `Map ${mapId || '-'}`,
+      mapName: mapMeta?.sub_name || mapMeta?.name || `Map ${mapId || '-'}`,
       mapMode: mapMeta?.game_mode || null,
       roundIndex: levelInfo?.round_index ?? 0,
       fightTime: Number(levelInfo?.fight_time || 0),

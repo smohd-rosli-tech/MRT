@@ -1,0 +1,502 @@
+[
+  {
+    "id": "1011",
+    "name": "hulk",
+    "real_name": "Bruce Banner",
+    "imageUrl": "/rivals/heroes/card/hulk.png",
+    "role": "Vanguard",
+    "attack_type": "Melee Heroes",
+    "team": ["Avengers"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1014",
+    "name": "the punisher",
+    "real_name": "Frank Castle",
+    "imageUrl": "/rivals/heroes/card/the-punisher.png",
+    "role": "Duelist",
+    "attack_type": "Hitscan Heroes",
+    "team": ["Marvelknights"],
+    "difficulty": "1"
+  },
+  {
+    "id": "1015",
+    "name": "storm",
+    "real_name": "Ororo Munroe",
+    "imageUrl": "/rivals/heroes/card/storm.png",
+    "role": "Duelist",
+    "attack_type": "Projectile Heroes",
+    "team": ["X_men", "Mutants"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1016",
+    "name": "loki",
+    "real_name": "Loki Laufeyson",
+    "imageUrl": "/rivals/heroes/card/loki.png",
+    "role": "Strategist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Godsofasgard"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1017",
+    "name": "human torch",
+    "real_name": "Jonathan \"johnny\" Storm",
+    "imageUrl": "/rivals/heroes/card/human-torch.png",
+    "role": "Duelist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Fantasticfour"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1018",
+    "name": "doctor strange",
+    "real_name": "Stephen Strange",
+    "imageUrl": "/rivals/heroes/card/doctor-strange.png",
+    "role": "Vanguard",
+    "attack_type": "Projectile Heroes",
+    "team": ["Avengers"],
+    "difficulty": "2"
+  },
+  {
+    "id": "1020",
+    "name": "mantis",
+    "real_name": "Mantis",
+    "imageUrl": "/rivals/heroes/card/mantis.png",
+    "role": "Strategist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Guardiansofthegalaxy"],
+    "difficulty": "1"
+  },
+  {
+    "id": "1021",
+    "name": "hawkeye",
+    "real_name": "Clint Barton",
+    "imageUrl": "/rivals/heroes/card/hawkeye.png",
+    "role": "Duelist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Avengers"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1022",
+    "name": "captain america",
+    "real_name": "Steven \"steve\" Rogers",
+    "imageUrl": "/rivals/heroes/card/captain-america.png",
+    "role": "Vanguard",
+    "attack_type": "Melee Heroes",
+    "team": ["Avengers"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1023",
+    "name": "rocket raccoon",
+    "real_name": "Rocket Raccoon",
+    "imageUrl": "/rivals/heroes/card/rocket-raccoon.png",
+    "role": "Strategist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Guardiansofthegalaxy"],
+    "difficulty": "1"
+  },
+  {
+    "id": "1024",
+    "name": "hela",
+    "real_name": "Hela",
+    "imageUrl": "/rivals/heroes/card/hela.png",
+    "role": "Duelist",
+    "attack_type": "Hitscan Heroes",
+    "team": ["Godsofasgard", "Villains"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1025",
+    "name": "cloak & dagger",
+    "real_name": "Tyrone Johnson & Tandy Bowen",
+    "imageUrl": "/rivals/heroes/card/cloak-&-dagger.png",
+    "role": "Strategist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Marvelknights"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1026",
+    "name": "black panther",
+    "real_name": "T'challa",
+    "imageUrl": "/rivals/heroes/card/black-panther.png",
+    "role": "Duelist",
+    "attack_type": "Melee Heroes",
+    "team": ["Avengers"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1027",
+    "name": "groot",
+    "real_name": "Groot",
+    "imageUrl": "/rivals/heroes/card/groot.png",
+    "role": "Vanguard",
+    "attack_type": "Melee Heroes",
+    "team": ["Guardiansofthegalaxy"],
+    "difficulty": "2"
+  },
+  {
+    "id": "1028",
+    "name": "ultron",
+    "real_name": "Ultron",
+    "imageUrl": "/rivals/heroes/card/ultron.png",
+    "role": "Strategist",
+    "attack_type": "Hitscan Heroes",
+    "team": ["Villains"],
+    "difficulty": "2"
+  },
+  {
+    "id": "1029",
+    "name": "magik",
+    "real_name": "Illyana Rasputin",
+    "imageUrl": "/rivals/heroes/card/magik.png",
+    "role": "Duelist",
+    "attack_type": "Melee Heroes",
+    "team": ["X_men", "Mutants"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1030",
+    "name": "moon knight",
+    "real_name": "Marc Spector",
+    "imageUrl": "/rivals/heroes/card/moon-knight.png",
+    "role": "Duelist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Marvelknights"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1031",
+    "name": "luna snow",
+    "real_name": "Seol Hee",
+    "imageUrl": "/rivals/heroes/card/luna-snow.png",
+    "role": "Strategist",
+    "attack_type": "Hitscan Heroes",
+    "team": ["Agentsofatlas"],
+    "difficulty": "2"
+  },
+  {
+    "id": "1032",
+    "name": "squirrel girl",
+    "real_name": "Doreen Green",
+    "imageUrl": "/rivals/heroes/card/squirrel-girl.png",
+    "role": "Duelist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Avengers"],
+    "difficulty": "1"
+  },
+  {
+    "id": "1033",
+    "name": "black widow",
+    "real_name": "Natasha Romanova",
+    "imageUrl": "/rivals/heroes/card/black-widow.png",
+    "role": "Duelist",
+    "attack_type": "Hitscan Heroes",
+    "team": ["Avengers"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1034",
+    "name": "iron man",
+    "real_name": "Anthony \"tony\" Stark",
+    "imageUrl": "/rivals/heroes/card/iron-man.png",
+    "role": "Duelist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Avengers"],
+    "difficulty": "2"
+  },
+  {
+    "id": "1035",
+    "name": "venom",
+    "real_name": "Edward \"eddie\" Brock",
+    "imageUrl": "/rivals/heroes/card/venom.png",
+    "role": "Vanguard",
+    "attack_type": "Melee Heroes",
+    "team": ["Guardiansofthegalaxy", "Web_warriors", "Villains"],
+    "difficulty": "1"
+  },
+  {
+    "id": "1036",
+    "name": "spider-man",
+    "real_name": "Peter Parker",
+    "imageUrl": "/rivals/heroes/card/spider-man.png",
+    "role": "Duelist",
+    "attack_type": "Melee Heroes",
+    "team": ["Web_warriors"],
+    "difficulty": "5"
+  },
+  {
+    "id": "1037",
+    "name": "magneto",
+    "real_name": "Max Eisenhardt",
+    "imageUrl": "/rivals/heroes/card/magneto.png",
+    "role": "Vanguard",
+    "attack_type": "Projectile Heroes",
+    "team": ["X_men", "Mutants", "Villains"],
+    "difficulty": "2"
+  },
+  {
+    "id": "1038",
+    "name": "scarlet witch",
+    "real_name": "Wanda Maximoff",
+    "imageUrl": "/rivals/heroes/card/scarlet-witch.png",
+    "role": "Duelist",
+    "attack_type": "Melee Heroes",
+    "team": ["Avengers"],
+    "difficulty": "1"
+  },
+  {
+    "id": "1039",
+    "name": "thor",
+    "real_name": "Thor Odinson",
+    "imageUrl": "/rivals/heroes/card/thor.png",
+    "role": "Vanguard",
+    "attack_type": "Melee Heroes",
+    "team": ["Avengers", "Godsofasgard"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1040",
+    "name": "mister fantastic",
+    "real_name": "Reed Richards",
+    "imageUrl": "/rivals/heroes/card/mister-fantastic.png",
+    "role": "Duelist",
+    "attack_type": "Melee Heroes",
+    "team": ["Fantasticfour"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1041",
+    "name": "winter soldier",
+    "real_name": "James \"bucky\" Barnes",
+    "imageUrl": "/rivals/heroes/card/winter-soldier.png",
+    "role": "Duelist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Avengers"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1042",
+    "name": "peni parker",
+    "real_name": "Peni Parker",
+    "imageUrl": "/rivals/heroes/card/peni-parker.png",
+    "role": "Vanguard",
+    "attack_type": "Projectile Heroes",
+    "team": ["Web_warriors"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1043",
+    "name": "star-lord",
+    "real_name": "Peter Quill",
+    "imageUrl": "/rivals/heroes/card/star-lord.png",
+    "role": "Duelist",
+    "attack_type": "Hitscan Heroes",
+    "team": ["Guardiansofthegalaxy"],
+    "difficulty": "2"
+  },
+  {
+    "id": "1044",
+    "name": "blade",
+    "real_name": "Eric Brooks",
+    "imageUrl": "/rivals/heroes/card/blade.png",
+    "role": "Duelist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Marvelknights", "Avengers", "Midnightsons"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1045",
+    "name": "namor",
+    "real_name": "Namor Mckenzie",
+    "imageUrl": "/rivals/heroes/card/namor.png",
+    "role": "Duelist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Avengers", "Mutants", "Villains"],
+    "difficulty": "2"
+  },
+  {
+    "id": "1046",
+    "name": "adam warlock",
+    "real_name": "Adam Warlock",
+    "imageUrl": "/rivals/heroes/card/adam-warlock.png",
+    "role": "Strategist",
+    "attack_type": "Hitscan Heroes",
+    "team": ["Guardiansofthegalaxy"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1047",
+    "name": "jeff the land shark",
+    "real_name": "Jeff",
+    "imageUrl": "/rivals/heroes/card/jeff-the-land-shark.png",
+    "role": "Strategist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Avengers"],
+    "difficulty": "1"
+  },
+  {
+    "id": "1048",
+    "name": "psylocke",
+    "real_name": "Sai",
+    "imageUrl": "/rivals/heroes/card/psylocke.png",
+    "role": "Duelist",
+    "attack_type": "Hitscan Heroes",
+    "team": ["X_men", "Mutants"],
+    "difficulty": "5"
+  },
+  {
+    "id": "1049",
+    "name": "wolverine",
+    "real_name": "James \"logan\" Howlett",
+    "imageUrl": "/rivals/heroes/card/wolverine.png",
+    "role": "Duelist",
+    "attack_type": "Melee Heroes",
+    "team": ["X_men", "Mutants"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1050",
+    "name": "invisible woman",
+    "real_name": "Susan Storm",
+    "imageUrl": "/rivals/heroes/card/invisible-woman.png",
+    "role": "Strategist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Fantasticfour"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1051",
+    "name": "the thing",
+    "real_name": "Benjamin Grimm",
+    "imageUrl": "/rivals/heroes/card/the-thing.png",
+    "role": "Vanguard",
+    "attack_type": "Melee Heroes",
+    "team": ["Fantasticfour"],
+    "difficulty": "1"
+  },
+  {
+    "id": "1052",
+    "name": "iron fist",
+    "real_name": "Lin Lie",
+    "imageUrl": "/rivals/heroes/card/iron-fist.png",
+    "role": "Duelist",
+    "attack_type": "Melee Heroes",
+    "team": ["Agentsofatlas", "Immortalweapon"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1053",
+    "name": "emma frost",
+    "real_name": "Emma Frost",
+    "imageUrl": "/rivals/heroes/card/emma-frost.png",
+    "role": "Vanguard",
+    "attack_type": "Hitscan Heroes",
+    "team": ["X_men", "Mutants", "Villains"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1054",
+    "name": "Phoenix",
+    "real_name": "Jean Grey",
+    "imageUrl": "/rivals/heroes/card/phoenix.png",
+    "role": "Duelist",
+    "attack_type": "Projectile",
+    "team": ["X_men", "Mutants", "Heroes"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1055",
+    "name": "daredevil",
+    "real_name": "Matt Murdock",
+    "imageUrl": "/rivals/heroes/card/daredevil.png",
+    "role": "Duelist",
+    "attack_type": "Melee Heroes",
+    "team": ["Marvelknights"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1056",
+    "name": "angela",
+    "real_name": "Angela Odinsdottir",
+    "imageUrl": "/rivals/heroes/card/angela.png",
+    "role": "Vanguard",
+    "attack_type": "Melee Heroes",
+    "team": ["Godsofasgard"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1057",
+    "name": "deadpool",
+    "real_name": "Wade Wilson",
+    "imageUrl": "/rivals/heroes/card/deadpool.png",
+    "role": ["Duelist", "Vanguard", "Strategist"],
+    "attack_type": "Hitscan Heroes",
+    "team": ["X_men"],
+    "difficulty": "0"
+  },
+  {
+    "id": "1058",
+    "name": "gambit",
+    "real_name": "Remy Lebeau",
+    "imageUrl": "/rivals/heroes/card/gambit.png",
+    "role": "Strategist",
+    "attack_type": "Projectile Heroes",
+    "team": ["X_men", "Mutants"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1059",
+    "name": "elsa bloodstone",
+    "real_name": "Elsa Bloodstone",
+    "imageUrl": "/rivals/heroes/card/elsa-bloodstone.png",
+    "role": "Duelist",
+    "attack_type": "Hitscan Heroes",
+    "team": ["Midnightsons"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1060",
+    "name": "white fox",
+    "real_name": "Ami Han",
+    "imageUrl": "/rivals/heroes/card/white-fox.png",
+    "role": "Strategist",
+    "attack_type": "Projectile Heroes",
+    "team": ["Agentsofatlas"],
+    "difficulty": "3"
+  },
+  {
+    "id": "1061",
+    "name": "black cat",
+    "real_name": "Felicia Hardy",
+    "imageUrl": "/rivals/heroes/card/black-cat.png",
+    "role": "Duelist",
+    "attack_type": "0",
+    "team": ["Villains"],
+    "difficulty": "4"
+  },
+  {
+    "id": "1062",
+    "name": "devil dinosaur",
+    "real_name": "Devil Dinosaur",
+    "imageUrl": "/rivals/heroes/card/devil-dinosaur.png",
+    "role": "Vanguard",
+    "attack_type": "0",
+    "team": [],
+    "difficulty": "3"
+  },
+  {
+    "id": "1065",
+    "name": "rogue",
+    "real_name": "Anna Marie",
+    "imageUrl": "/rivals/heroes/card/rogue.png",
+    "role": "Vanguard",
+    "attack_type": "Melee Heroes",
+    "team": ["X_men", "Mutants"],
+    "difficulty": "5"
+  }
+]

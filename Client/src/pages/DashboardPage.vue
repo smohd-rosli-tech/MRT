@@ -4,6 +4,16 @@
       <div class="score-box team1-box">{{ dashboard.meta.scoreLeft }}</div>
 
       <div class="main-board header-center">
+        <div class="dashboard-actions">
+          <q-btn
+          dense
+          flat
+          icon="arrow_back"
+          label="Back"
+          color="white"
+          @click="router.back()"
+          />
+        </div>
         <h1>{{ dashboard.meta.mapName }}</h1>
 
         <div class="match-info-bar">
@@ -21,7 +31,9 @@
             </div>
 
             <div class="objective-right">
-              <span v-if="objectiveView.badge" class="objective-badge">{{ objectiveView.badge }}</span>
+              <span v-if="objectiveView.badge" class="objective-badge">{{
+                objectiveView.badge
+              }}</span>
               <span class="objective-percent">{{ objectiveView.percentLabel }}</span>
             </div>
           </div>
@@ -29,12 +41,20 @@
           <template v-if="objectiveView.type === 'convoy'">
             <div class="payload-track">
               <div class="payload-line" />
-              <div v-for="checkpoint in objectiveView.checkpoints" :key="checkpoint.value" class="payload-checkpoint"
+              <div
+                v-for="checkpoint in objectiveView.checkpoints"
+                :key="checkpoint.value"
+                class="payload-checkpoint"
                 :class="{ reached: objectiveView.percent >= checkpoint.value }"
-                :style="{ left: `${checkpoint.value}%` }">
+                :style="{ left: `${checkpoint.value}%` }"
+              >
                 <span>{{ checkpoint.label }}</span>
               </div>
-              <div class="payload-marker" :class="objectiveBarClass" :style="{ left: `${objectiveView.safePercent}%` }">
+              <div
+                class="payload-marker"
+                :class="objectiveBarClass"
+                :style="{ left: `${objectiveView.safePercent}%` }"
+              >
                 🚚
               </div>
             </div>
@@ -42,21 +62,31 @@
 
           <template v-else-if="objectiveView.type === 'convergence'">
             <div class="phase-row">
-              <div class="phase-pill" :class="{ active: objectiveView.phase === 'capture' }">Capture</div>
+              <div class="phase-pill" :class="{ active: objectiveView.phase === 'capture' }">
+                Capture
+              </div>
               <div class="phase-line" />
-              <div class="phase-pill" :class="{ active: objectiveView.phase === 'escort' }">Escort</div>
+              <div class="phase-pill" :class="{ active: objectiveView.phase === 'escort' }">
+                Escort
+              </div>
             </div>
 
             <div class="objective-track">
-              <div class="objective-fill" :class="objectiveBarClass"
-                :style="{ width: `${objectiveView.safePercent}%` }" />
+              <div
+                class="objective-fill"
+                :class="objectiveBarClass"
+                :style="{ width: `${objectiveView.safePercent}%` }"
+              />
             </div>
           </template>
 
           <template v-else>
             <div class="objective-track">
-              <div class="objective-fill" :class="objectiveBarClass"
-                :style="{ width: `${objectiveView.safePercent}%` }" />
+              <div
+                class="objective-fill"
+                :class="objectiveBarClass"
+                :style="{ width: `${objectiveView.safePercent}%` }"
+              />
             </div>
           </template>
 
@@ -75,7 +105,7 @@
       <div class="summary-box">
         <div class="summary-title">Camp 1 Summary</div>
         <div class="summary-values">
-          <div>Total Kills ⚔️ : {{ dashboard.teams.team1.summary.kills || 0 }}</div>
+          <div>Total KOs ⚔️ : {{ dashboard.teams.team1.summary.kills || 0 }}</div>
           <div>Total Damage 💥 : {{ formatCompact(dashboard.teams.team1.summary.damage) }}</div>
           <div>Total Heal 💚 : {{ formatCompact(dashboard.teams.team1.summary.heal) }}</div>
           <div>Avg Hit % 🎯 : {{ formatPct(dashboard.teams.team1.summary.avgHitRate) }}</div>
@@ -85,7 +115,7 @@
       <div class="summary-box">
         <div class="summary-title">Camp 2 Summary</div>
         <div class="summary-values">
-          <div>Total Kills ⚔️ : {{ dashboard.teams.team2.summary.kills || 0 }}</div>
+          <div>Total KOs ⚔️ : {{ dashboard.teams.team2.summary.kills || 0 }}</div>
           <div>Total Damage 💥 : {{ formatCompact(dashboard.teams.team2.summary.damage) }}</div>
           <div>Total Heal 💚 : {{ formatCompact(dashboard.teams.team2.summary.heal) }}</div>
           <div>Avg Hit % 🎯 : {{ formatPct(dashboard.teams.team2.summary.avgHitRate) }}</div>
@@ -107,7 +137,7 @@
                 <th>Player</th>
                 <th>Hero</th>
                 <th>K</th>
-                <th>D</th>
+                <th>C</th>
                 <th>A</th>
                 <th>DMG</th>
                 <th>Heal</th>
@@ -117,8 +147,12 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="player in dashboard.teams.team1.players" :key="player.playerId"
-                :class="rowClass(player, 'team1')" @click="selectPlayer(player)">
+              <tr
+                v-for="player in dashboard.teams.team1.players"
+                :key="player.playerId"
+                :class="rowClass(player, 'team1')"
+                @click="selectPlayer(player)"
+              >
                 <td>
                   <div class="name-stack">
                     <span>{{ player.playerName }}</span>
@@ -129,8 +163,12 @@
 
                 <td>
                   <div class="hero-cell">
-                    <img :src="player.heroMeta?.image" :alt="player.heroMeta?.displayName"
-                      @error="e => (e.target.src = '/imgs/heroes/0_unknown.png')" class="hero-thumb" />
+                    <img
+                      :src="player.heroMeta?.image"
+                      :alt="player.heroMeta?.displayName"
+                      @error="(e) => (e.target.src = '/imgs/heroes/0_unknown.png')"
+                      class="hero-thumb"
+                    />
 
                     <div class="hero-text">
                       <span class="hero-name">{{ player.heroMeta?.displayName }}</span>
@@ -163,7 +201,7 @@
                 <th>Player</th>
                 <th>Hero</th>
                 <th>K</th>
-                <th>D</th>
+                <th>C</th>
                 <th>A</th>
                 <th>DMG</th>
                 <th>Heal</th>
@@ -173,8 +211,12 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="player in dashboard.teams.team2.players" :key="player.playerId"
-                :class="rowClass(player, 'team2')" @click="selectPlayer(player)">
+              <tr
+                v-for="player in dashboard.teams.team2.players"
+                :key="player.playerId"
+                :class="rowClass(player, 'team2')"
+                @click="selectPlayer(player)"
+              >
                 <td>
                   <div class="name-stack">
                     <span>{{ player.playerName }}</span>
@@ -185,8 +227,12 @@
 
                 <td>
                   <div class="hero-cell">
-                    <img :src="player.heroMeta?.image" :alt="player.heroMeta?.displayName"
-                      @error="e => (e.target.src = '/imgs/heroes/0_unknown.png')" class="hero-thumb" />
+                    <img
+                      :src="player.heroMeta?.image"
+                      :alt="player.heroMeta?.displayName"
+                      @error="(e) => (e.target.src = '/imgs/heroes/0_unknown.png')"
+                      class="hero-thumb"
+                    />
 
                     <div class="hero-text">
                       <span class="hero-name">{{ player.heroMeta?.displayName }}</span>
@@ -220,23 +266,48 @@
 
         <div v-if="selectedPlayer" class="player-detail">
           <div class="grid">
-            <div><strong>Name</strong><span>{{ selectedPlayer.playerName }}</span></div>
-            <div><strong>Hero</strong><span>{{ selectedPlayer.heroMeta?.displayName }}</span></div>
-            <div><strong>Hero ID</strong><span>{{ selectedPlayer.heroId }}</span></div>
+            <div>
+              <strong>Name</strong><span>{{ selectedPlayer.playerName }}</span>
+            </div>
+            <div>
+              <strong>Hero</strong><span>{{ selectedPlayer.heroMeta?.displayName }}</span>
+            </div>
+            <div>
+              <strong>Hero ID</strong><span>{{ selectedPlayer.heroId }}</span>
+            </div>
             <!-- <div><strong>Role</strong><span>{{ roleLabel(selectedPlayer.responsibility) }}</span></div> -->
-            <div><strong>KDA</strong><span>{{ selectedPlayer.kills }}/{{ selectedPlayer.deaths }}/{{
-              selectedPlayer.assists }}</span></div>
-            <div><strong>DMG</strong><span>{{ formatCompact(selectedPlayer.damage) }}</span></div>
-            <div><strong>HEAL</strong><span>{{ formatCompact(selectedPlayer.heal) }}</span></div>
-            <div><strong>Hit %</strong><span>{{ formatPct(selectedPlayer.hitRate) }}</span></div>
-            <div><strong>Ult</strong><span>{{ Math.round((selectedPlayer.ultRatio || 0) * 100) }}%</span></div>
+            <div>
+              <strong>K/C/A</strong
+              ><span
+                >{{ selectedPlayer.kills }}/{{ selectedPlayer.deaths }}/{{
+                  selectedPlayer.assists
+                }}</span
+              >
+            </div>
+            <div>
+              <strong>DMG</strong><span>{{ formatCompact(selectedPlayer.damage) }}</span>
+            </div>
+            <div>
+              <strong>HEAL</strong><span>{{ formatCompact(selectedPlayer.heal) }}</span>
+            </div>
+            <div>
+              <strong>Hit %</strong><span>{{ formatPct(selectedPlayer.hitRate) }}</span>
+            </div>
+            <div>
+              <strong>Ult</strong
+              ><span>{{ Math.round((selectedPlayer.ultRatio || 0) * 100) }}%</span>
+            </div>
             <!-- <div><strong>Performance</strong><span>{{ Number(selectedPlayer.mvp_val ?? 0).toFixed(2) }}</span></div> -->
           </div>
 
           <div class="selected-hero-header">
             <div class="hero-cell hero-cell-large">
-              <img :src="selectedPlayer.heroMeta?.image" :alt="selectedPlayer.heroMeta?.displayName"
-                @error="e => (e.target.src = '/imgs/heroes/0_unknown.png')" class="hero-thumb hero-thumb-large" />
+              <img
+                :src="selectedPlayer.heroMeta?.image"
+                :alt="selectedPlayer.heroMeta?.displayName"
+                @error="(e) => (e.target.src = '/imgs/heroes/0_unknown.png')"
+                class="hero-thumb hero-thumb-large"
+              />
 
               <div class="hero-text">
                 <span class="hero-name">{{ selectedPlayer.heroMeta?.displayName }}</span>
@@ -247,7 +318,11 @@
 
           <h3>Abilities</h3>
           <div class="cooldown-list">
-            <div v-for="ability in selectedPlayer.abilities" :key="ability.id" class="cooldown-item">
+            <div
+              v-for="ability in selectedPlayer.abilities"
+              :key="ability.id"
+              class="cooldown-item"
+            >
               <strong>
                 {{ ability.id }}
                 <template v-if="ability.name"> - {{ ability.name }}</template>
@@ -255,7 +330,9 @@
               <span>CD {{ Number(ability.cooldown ?? 0).toFixed(2) }}</span>
               <span>
                 Energy:
-                {{ Math.round(Number(ability.energy || 0)) }}/{{ Math.round(Number(ability.energy_max || 0)) }}
+                {{ Math.round(Number(ability.energy || 0)) }}/{{
+                  Math.round(Number(ability.energy_max || 0))
+                }}
               </span>
             </div>
           </div>
@@ -269,13 +346,15 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { api } from 'boot/axios'
 import { useSeshStore } from 'src/stores/sesh'
 const seshStore = useSeshStore()
 const route = useRoute()
+const router = useRouter()
 // const activeTab = ref('stats')
-const roomId = computed(() => seshStore.room || '120001')
+// const roomId = computed(() => seshStore.room || '120001')
+const roomId = ref(seshStore.room)
 const loading = ref(false)
 const isPolling = ref(false)
 const selectedPlayerId = ref(null)
@@ -284,7 +363,6 @@ const pollTimer = ref(null)
 // const banPickInfo = computed(() => dashboard.value?.draft ?? [])
 
 // const displayedBanPick = computed(() => (draftLoop.value.length ? draftLoop.value : banPickInfo.value))
-
 
 const emptyDashboard = () => ({
   meta: {
@@ -348,9 +426,10 @@ const allPlayers = computed(() => [
 const selectedPlayer = computed(() => {
   if (!selectedPlayerId.value) return null
 
-  return allPlayers.value.find(
-    player => String(player.playerId) === String(selectedPlayerId.value)
-  ) || null
+  return (
+    allPlayers.value.find((player) => String(player.playerId) === String(selectedPlayerId.value)) ||
+    null
+  )
 })
 
 const objectiveBarClass = computed(() => {
@@ -408,7 +487,9 @@ const objectiveView = computed(() => {
       title: 'Capture Point',
       subtitle: contested
         ? 'Point is being contested'
-        : owner ? `${ownerLabel} controlling` : 'Neutral point',
+        : owner
+          ? `${ownerLabel} controlling`
+          : 'Neutral point',
       badge: contested ? 'CONTESTED' : owner ? 'CONTROL' : 'NEUTRAL',
       leftStat: `Camp 1 on point: ${team1OnPoint}`,
       centerStat: `Round ${roundIndex}`,
@@ -436,18 +517,29 @@ const objectiveView = computed(() => {
   }
 
   if (mode.includes('convergence') || mode.includes('hybrid')) {
-    const phase = percent >= 100 || String(objective.label || '').toLowerCase().includes('escort')
-      ? 'escort'
-      : 'capture'
+    const phase =
+      percent >= 100 ||
+      String(objective.label || '')
+        .toLowerCase()
+        .includes('escort')
+        ? 'escort'
+        : 'capture'
 
     return {
       ...base,
       type: 'convergence',
       modeClass: 'objective-convergence',
       title: phase === 'capture' ? 'Capture Phase' : 'Escort Phase',
-      subtitle: phase === 'capture'
-        ? (contested ? 'Capture point contested' : owner ? `${ownerLabel} capturing` : 'Waiting for capture')
-        : (owner ? `${ownerLabel} escorting objective` : 'Payload waiting'),
+      subtitle:
+        phase === 'capture'
+          ? contested
+            ? 'Capture point contested'
+            : owner
+              ? `${ownerLabel} capturing`
+              : 'Waiting for capture'
+          : owner
+            ? `${ownerLabel} escorting objective`
+            : 'Payload waiting',
       badge: contested ? 'CONTESTED' : phase.toUpperCase(),
       phase,
       safePercent: phase === 'escort' && percent >= 100 ? 0 : percent,
@@ -512,7 +604,7 @@ function startPolling() {
     stopPolling()
     isPolling.value = true
     loadBattle()
-    pollTimer.value = setInterval(loadBattle, 500)
+    pollTimer.value = setInterval(loadBattle, 800)
   }
 }
 
@@ -570,7 +662,7 @@ watch(
     selectedPlayerId.value = null
     dashboard.value = emptyDashboard()
     startPolling()
-  }
+  },
 )
 
 onMounted(() => {
@@ -603,6 +695,12 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 14px;
+}
+
+.dashboard-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 8px;
 }
 
 .main-board {
@@ -791,12 +889,16 @@ onBeforeUnmount(() => {
 
 .team1-mvp {
   background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), rgba(37, 99, 235, 0.18));
-  box-shadow: inset 4px 0 0 #60a5fa, 0 0 14px rgba(96, 165, 250, 0.28);
+  box-shadow:
+    inset 4px 0 0 #60a5fa,
+    0 0 14px rgba(96, 165, 250, 0.28);
 }
 
 .team2-mvp {
   background: linear-gradient(90deg, rgba(239, 68, 68, 0.3), rgba(185, 28, 28, 0.18));
-  box-shadow: inset 4px 0 0 #f87171, 0 0 14px rgba(248, 113, 113, 0.24);
+  box-shadow:
+    inset 4px 0 0 #f87171,
+    0 0 14px rgba(248, 113, 113, 0.24);
 }
 
 .team1-svp {
@@ -930,7 +1032,7 @@ onBeforeUnmount(() => {
   margin-bottom: 16px;
 }
 
-.player-detail .grid>div {
+.player-detail .grid > div {
   background: #0f172a;
   border: 1px solid #334155;
   border-radius: 12px;
@@ -1159,7 +1261,9 @@ onBeforeUnmount(() => {
 .objective-fill {
   height: 100%;
   border-radius: 999px;
-  transition: width 0.3s ease, background 0.3s ease;
+  transition:
+    width 0.3s ease,
+    background 0.3s ease;
 }
 
 .objective-fill.team1 {
@@ -1193,7 +1297,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 900px) {
-
   .top-header,
   .summary-row,
   .table-title-row,

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const Match = require("../models/Match");
+const Series = require("../models/Series");
 
 const heroesRaw = require("../../Client/src/assets/heroes_UO.json");
 const mapsRaw = require("../../Client/src/assets/maps.json");
@@ -29,6 +30,7 @@ const mapMap = Object.fromEntries(
 const latestRoomInfoCache = new Map();
 const roomBattleTracker = new Map();
 const latestBattleCache = new Map();
+const EMPTY_POLLS_BEFORE_SAVE = 4;
 
 /* -----------------------------
    Xpression helpers
@@ -38,8 +40,17 @@ const axios = require("axios");
 let activeRoomId = null;
 let xpressionPollTimer = null;
 
-const XPRESSION_BASE =
-  process.env.INTERNAL_API_BASE || "http://localhost:9000/api/xpression";
+const SERVER_BASE =
+  process.env.INTERNAL_API_BASE || "http://localhost:9005/api";
+
+function hasValidProcessedBattle(processed = {}) {
+  const mapId = Number(processed?.meta?.mapId || 0);
+
+  const bluePlayers = processed?.teams?.team1?.players || [];
+  const redPlayers = processed?.teams?.team2?.players || [];
+
+  return mapId > 0 && (bluePlayers.length > 0 || redPlayers.length > 0);
+}
 
 /* -----------------------------
    Draft helpers
@@ -150,18 +161,19 @@ function buildDraftPlan(firstPickerPhase1) {
 function buildRealtimeDraftForXpression(realtime = {}) {
   const data = realtime?.data || realtime || {};
 
-  const histories = Array.isArray(data.suggest_histories)
-    ? data.suggest_histories
-    : [];
+  // const histories = Array.isArray(data.suggest_histories)
+  //   ? data.suggest_histories
+  //   : [];
 
-  const Draft = histories
-    .filter((item) => Number(item.suggest_hero) > 0)
+  const Draft = data
+    // .filter((item) => Number(item.suggest_hero) > 0)
     .map((item) => ({
       round_index: Number(item.round_index),
       operate_type: Number(item.operate_type),
       camp: Number(item.camp),
       battle_side: Number(item.battle_side ?? 0),
-      cur_pick_hero: Number(item.suggest_hero),
+      cur_pick_hero: Number(item.hero_id),
+      is_no_selection: Number(item.hero_id ?? 0) === 0,
     }));
 
   return buildLiveDraft(Draft);
@@ -185,18 +197,135 @@ function hasValidBattleStats(raw = {}) {
   );
 }
 
-function buildLiveMatchUid(roomId, battleData = {}) {
+function getHeroBaseId(heroId) {
+  const id = Number(heroId);
+
+  if (id === 10571 || id === 10572 || id === 10573) return 1057;
+
+  return id;
+}
+
+function normalizeHeroName(name = "") {
+  return String(name)
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (s) => s.toUpperCase());
+}
+
+function getHeroRole(heroId) {
+  const id = Number(heroId);
+
+  if (!id) return "None";
+
+  const baseId = getHeroBaseId(id);
+  const hero = heroMap[String(baseId)];
+
+  if (!hero) return "Unknown";
+
+  if (id === 10571 && Array.isArray(hero.role))
+    return hero.role[0] || "Vanguard";
+    // return hero.role[0] || "Duelist";
+  if (id === 10572 && Array.isArray(hero.role))
+    return hero.role[0] || "Duelist";
+    // return hero.role[1] || "Vanguard";
+  if (id === 10573 && Array.isArray(hero.role))
+    return hero.role[2] || "Strategist";
+
+  if (Array.isArray(hero.role)) return hero.role[0] || "Unknown";
+
+  return hero.role || "Unknown";
+}
+
+function getHeroName(heroId, type = "") {
+  const id = Number(heroId);
+
+  if (!id) {
+    if (type === "PICK") return "No Pick";
+    if (type === "BAN") return "No Ban";
+    return "Hero 0";
+  }
+
+  const baseId = getHeroBaseId(id);
+  const hero = heroMap[String(baseId)];
+
+  return hero ? normalizeHeroName(hero.name) : `Hero ${id}`;
+}
+
+function getMapMeta(mapId) {
+  const map = mapMap[String(mapId)] || {};
+
+  return {
+    id: Number(mapId || 0),
+    name: (
+      map.sub_name ||
+      map.full_name ||
+      map.name ||
+      `Map ${mapId || 0}`
+    ).toUpperCase(),
+    mode: (map.game_mode || map.mode || map.gameMode || "").toUpperCase(),
+  };
+}
+
+function buildPlayerPayload(player, playerNameMap = {}) {
+  return {
+    name:
+      playerNameMap[player.player_uid] ||
+      player.nick_name ||
+      `Player ${String(player.player_uid)}`,
+    uid: player.player_uid,
+
+    hero: {
+      id: player.cur_hero_id,
+      name: getHeroName(player.cur_hero_id),
+      role: getHeroRole(player.cur_hero_id),
+    },
+
+    kills: player.k || 0,
+    deaths: player.d || 0,
+    assists: player.a || 0,
+
+    damage: player.total_damage || player.total_hero_damage || 0,
+    damage_taken:
+      player.total_damage_taken || player.total_hero_damage_taken || 0,
+    healing: player.total_heal || player.total_hero_heal || 0,
+
+    hit_rate: player.session_hit_rate || 0,
+    solo_kill: player.solo_kill || player.dynamic_fields?.live_solo_kill || 0,
+    last_kill: player.player_heroes?.[0]?.last_kill || 0,
+    consecutiveKOs:
+      player.max_continue_kill_count ||
+      player.consecutive_kos ||
+      player.dynamic_fields?.live_consecutive_kos ||
+      0,
+    continueKillKDA:
+      player.continue_kill_kda ||
+      player.dynamic_fields?.live_continue_kill_kda ||
+      0,
+
+    hp: player.hp || player.dynamic_fields?.live_hp || 0,
+    ult_ratio: player.ult_ratio || player.dynamic_fields?.live_ult_ratio || 0,
+  };
+}
+
+function buildLiveMatchUid(roomId, battleData = {}, roomInfo = null) {
   const level = battleData.level_info || {};
-  const mapId = level.map_id || "unknownMap";
-  const roundIndex = level.round_index ?? "unknownRound";
+
+  const battleId =
+    battleData.battle_id || level.battle_id || roomInfo?.battle_id;
+
+  if (battleId) {
+    return `${String(roomId)}_${String(battleId)}`;
+  }
+
+  const mapId = level.map_id || battleData.map_id || "unknownMap";
 
   const startTime =
     battleData.battle_start_time ||
     battleData.start_time ||
     level.fight_start_time ||
-    Math.floor(Date.now() / 1000);
+    "unknownStart";
 
-  return `${String(roomId)}_${startTime}_${mapId}_${roundIndex}`;
+  return `${String(roomId)}_${startTime}_${mapId}`;
 }
 
 function getHitRateFromStats(statisticsData = {}, playerUid, heroId) {
@@ -368,14 +497,17 @@ function buildLiveMatchFromBattleStats(
   const playersData = battleData.players_data || {};
   const statisticsData = battleData.statistics_data || {};
   const mvps = battleData.mvps || {};
+  const draft = battleData.ban_pick_info || [];
 
   const matchPlayers = Object.entries(playersData).map(([playerUid, player]) =>
     mapLivePlayerToMatchPlayer(playerUid, player, statisticsData),
   );
 
   return {
-    match_uid: buildLiveMatchUid(roomId, battleData),
+    match_uid: buildLiveMatchUid(roomId, battleData, roomInfo),
     source: "live_battle",
+    isTestMatch: Boolean(false),
+    region: String("EMEA"),
     room_id: String(roomId),
 
     match_time_stamp:
@@ -414,7 +546,7 @@ function buildLiveMatchFromBattleStats(
         round_result: roomInfo?.round_results || [],
         league_tag: roomInfo?.league_tag || "",
       }),
-      ban_pick_info: battleData.ban_pick_info || [],
+      ban_pick_info: draft || [],
     },
 
     match_players: matchPlayers,
@@ -454,97 +586,602 @@ function isRealPlayedMatch(rawBattleStats = {}) {
   return true;
 }
 
+/*************** REPLAY HELPERS ******************/
+function parseJsonMaybe(value, fallback = {}) {
+  try {
+    if (!value) return fallback;
+    if (typeof value === "object") return value;
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function isReplayCampMode(match = {}) {
+  const players = Array.isArray(match.match_players) ? match.match_players : [];
+  return players.some((player) => Number(player.camp) === 0);
+}
+
+function normalizeReplayCamp(match = {}, camp) {
+  const value = Number(camp); // Replay format: 0 = Red, 1 = Blue
+
+  if (isReplayCampMode(match)) {
+    return value === 0 ? 2 : 1;
+  }
+
+  return value;
+}
+
+function getScoreValue(scoreInfo = {}, keys = []) {
+  for (const key of keys) {
+    if (scoreInfo?.get) {
+      const value = scoreInfo.get(String(key));
+      if (value !== undefined && value !== null) return value;
+    }
+
+    if (
+      scoreInfo?.[String(key)] !== undefined &&
+      scoreInfo?.[String(key)] !== null
+    ) {
+      return scoreInfo[String(key)];
+    }
+
+    if (
+      scoreInfo?.[Number(key)] !== undefined &&
+      scoreInfo?.[Number(key)] !== null
+    ) {
+      return scoreInfo[Number(key)];
+    }
+  }
+
+  return 0;
+}
+
+function getReplayTeamInfo(match = {}) {
+  const league = parseJsonMaybe(match.dynamic_fields?.league_round_info, {});
+  const scoreInfo = match.dynamic_fields?.score_info || {};
+
+  return {
+    blue: {
+      name: league?.["1"]?.club_team_name || "Blue",
+      short: league?.["1"]?.club_team_mini_name || "BLU",
+      score: Number(
+        getScoreValue(scoreInfo, ["0", "1"]) ?? league?.["1"]?.score ?? 0,
+      ),
+      // score: Number(
+      //   scoreInfo?.["0"] ??
+      //     scoreInfo?.["1"] ??
+      //     league?.["1"]?.score ??
+      //     0,
+      // ),
+    },
+    red: {
+      name: league?.["2"]?.club_team_name || "Red",
+      short: league?.["2"]?.club_team_mini_name || "RED",
+      score: Number(
+        getScoreValue(scoreInfo, ["1", "2"]) ?? league?.["2"]?.score ?? 0,
+      ),
+      // score: Number(
+      //   scoreInfo?.["1"] ??
+      //     scoreInfo?.["2"] ??
+      //     league?.["2"]?.score ??
+      //     0,
+      // ),
+    },
+  };
+}
+
+function buildReplayPlayerPayload(player = {}) {
+  const heroId = Number(player.cur_hero_id || 0);
+
+  return {
+    name: player.nick_name || `Player ${player.player_uid}`,
+    uid: Number(player.player_uid || 0),
+
+    hero: {
+      id: heroId,
+      name: getHeroName(heroId),
+      role: getHeroRole(heroId),
+    },
+
+    kills: Number(player.k || 0),
+    deaths: Number(player.d || 0),
+    assists: Number(player.a || 0),
+
+    damage: Number(player.total_hero_damage || player.total_damage || 0),
+    damage_taken: Number(
+      player.total_damage_taken || player.total_hero_damage_taken || 0,
+    ),
+    healing: Number(player.total_hero_heal || player.total_heal || 0),
+
+    hit_rate: Number(player.session_hit_rate || 0),
+    solo_kill: Number(player.solo_kill || 0),
+    last_kill: Number(
+      player.last_kill || player.player_heroes?.[0]?.last_kill || 0,
+    ),
+    consecutiveKOs: Number(player.max_continue_kill_count || 0),
+    continueKillKDA: Number(
+      player.player_heroes?.[0]?.session_continue_kill_count || 0,
+    ),
+
+    hp: 0,
+    ult_ratio: 0,
+  };
+}
+
+function buildReplayStatsForXpression(matchInput = {}) {
+  const match =
+    typeof matchInput.toObject === "function"
+      ? matchInput.toObject()
+      : matchInput;
+
+  const teamInfo = getReplayTeamInfo(match);
+  const players = Array.isArray(match.match_players) ? match.match_players : [];
+
+  // const bluePlayers = players
+  //   .filter((p) => normalizeReplayCamp(p.camp) === 1)
+  //   .map(buildReplayPlayerPayload);
+
+  // const redPlayers = players
+  //   .filter((p) => normalizeReplayCamp(p.camp) === 2)
+  //   .map(buildReplayPlayerPayload);
+
+  const bluePlayers = players
+    .filter((p) => normalizeReplayCamp(match, p.camp) === 1)
+    .map(buildReplayPlayerPayload);
+
+  const redPlayers = players
+    .filter((p) => normalizeReplayCamp(match, p.camp) === 2)
+    .map(buildReplayPlayerPayload);
+
+  const winnerCamp = normalizeReplayCamp(match, match.match_winner_side);
+  const mvpPlayer = players.find(
+    (p) => Number(p.player_uid) === Number(match.mvp_uid),
+  );
+
+  // const svpPlayer = players.find(
+  //   (p) => Number(p.player_uid) === Number(match.svp_uid),
+  // );
+
+  const map = getMapMeta(match.match_map_id);
+
+  return {
+    Map: {
+      id: Number(map.id || match.match_map_id || 0),
+      name: String(map.name || "").toUpperCase(),
+      mode: String(map.mode || "").toUpperCase(),
+    },
+
+    Blue: {
+      name: teamInfo.blue.name,
+      short: teamInfo.blue.short,
+      is_win: winnerCamp === 1 ? 1 : 0,
+      score: Number(teamInfo.blue.score || 0),
+      players: bluePlayers,
+    },
+
+    Red: {
+      name: teamInfo.red.name,
+      short: teamInfo.red.short,
+      is_win: winnerCamp === 2 ? 1 : 0,
+      score: Number(teamInfo.red.score || 0),
+      players: redPlayers,
+    },
+
+    MVP: mvpPlayer ? buildReplayPlayerPayload(mvpPlayer) : null,
+  };
+}
+
+async function fetchReplayMatchFromBattleStats(roomId, rawBattleStats = {}) {
+  const battleData = getBattleData(rawBattleStats);
+
+  const replayId = String(battleData.replay_id || "");
+  const zoneId = Number(battleData.zone_id || 12001);
+
+  if (!replayId) {
+    apiLogger.info(
+      `:hourglass_flowing_sand: No replay_id found yet for room ${roomId}`,
+    );
+    return null;
+  }
+
+  const playerUid = Number(Object.keys(battleData.players_data || {})[0] || 0);
+
+  if (!playerUid) {
+    apiLogger.info(
+      `:hourglass_flowing_sand: No player_uid found for replay query room ${roomId}`,
+    );
+    return null;
+  }
+
+  const replayResponse = await getReplayQueryMatch({
+    player_uid: playerUid,
+    zone_id: zoneId,
+    replay_ids: [replayId],
+  });
+
+  return replayResponse?.data?.matches?.[0] || null;
+}
+
+/*************** SAVE HELPERS ******************/
+async function saveMatchReplay(roomId, rawBattleStats = {}, roomInfo = null) {
+  let xpressionStatsSent = false;
+  const key = String(roomId);
+
+  const replayMatch = await fetchReplayMatchFromBattleStats(
+    key,
+    rawBattleStats,
+  );
+
+  if (!replayMatch) {
+    return {
+      saved: false,
+      reason: "REPLAY_NOT_READY",
+    };
+  }
+
+  const payload = {
+    ...replayMatch,
+
+    source: "replay_query_match",
+    room_id: key,
+    dynamic_fields: {
+      ...(replayMatch.dynamic_fields || {}),
+      room_info: roomInfo || null,
+    },
+  };
+
+  const savedMatch = await Match.findOneAndUpdate(
+    { match_uid: payload.match_uid },
+    { $setOnInsert: payload },
+    {
+      upsert: true,
+      returnDocument: "after",
+      setDefaultsOnInsert: true,
+    },
+  );
+
+  apiLogger.info(`✅ Replay match saved/found: ${savedMatch.match_uid}`);
+
+  const savedSeries = await Series.findOneAndUpdate(
+    { room_id: key },
+    {
+      $set: {
+        battle_id: String(roomInfo?.battle_id || payload.match_uid || ""),
+        region: String("GLOBAL"),
+        isTest: Boolean(true),
+        max_bo: Number(roomInfo?.max_bo || 0),
+        cur_bo: Number(roomInfo?.cur_bo || 0),
+        round_results: Array.isArray(roomInfo?.round_results)
+          ? roomInfo.round_results
+          : [],
+
+        team1: {
+          camp: 1,
+          name: roomInfo?.group_info?.["1"]?.name || "Team 1",
+          mini_name: roomInfo?.group_info?.["1"]?.mini_name || "T1",
+          icon_url: roomInfo?.group_info?.["1"]?.icon_url || "",
+          score: Number(roomInfo?.group_info?.["1"]?.score || 0),
+        },
+
+        team2: {
+          camp: 2,
+          name: roomInfo?.group_info?.["2"]?.name || "Team 2",
+          mini_name: roomInfo?.group_info?.["2"]?.mini_name || "T2",
+          icon_url: roomInfo?.group_info?.["2"]?.icon_url || "",
+          score: Number(roomInfo?.group_info?.["2"]?.score || 0),
+        },
+
+        raw_room_info: roomInfo || null,
+      },
+
+      $addToSet: {
+        matches: String(savedMatch.match_uid),
+      },
+    },
+    {
+      upsert: true,
+      returnDocument: "after",
+      setDefaultsOnInsert: true,
+      runValidators: true,
+    },
+  );
+
+  apiLogger.info(
+    `✅ Series saved/found for room ${key}, matches: ${savedSeries.matches?.length || 0}`,
+  );
+
+  try {
+    const statsPayload = buildReplayStatsForXpression(savedMatch);
+
+    apiLogger.info(":package: Built replay stats payload for Xpression:", {
+      map: statsPayload.Map,
+      bluePlayers: statsPayload.Blue?.players?.length || 0,
+      redPlayers: statsPayload.Red?.players?.length || 0,
+      hasMVP: Boolean(statsPayload.MVP),
+    });
+
+    await axios.post(`${SERVER_BASE}/xpression/stats`, {
+      mode: "live",
+      payload: statsPayload,
+    });
+
+    xpressionStatsSent = true;
+    apiLogger.info(
+      `Stable replay stats sent to Xpression: ${savedMatch.match_uid}`,
+    );
+  } catch (xpressionErr) {
+    apiLogger.error(":x: Failed to POST replay stats to Xpression:", {
+      message: xpressionErr.message,
+      status: xpressionErr.response?.status,
+      data: xpressionErr.response?.data,
+      url: xpressionErr.config?.url,
+    });
+  }
+
+  // await axios.post(`${SERVER_BASE}/xpression/stats`, {
+  //   mode: "live",
+  //   payload: buildReplayStatsForXpression(savedMatch),
+  // });
+
+  // apiLogger.info(
+  //   `📤 Stable replay stats sent to Xpression: ${savedMatch.match_uid}`,
+  // );
+
+  return {
+    saved: true,
+    xpressionStatsSent,
+    match: savedMatch,
+    series: savedSeries,
+  };
+}
+
 async function saveLiveBattleIfNeeded(roomId, rawBattleStats) {
   const key = String(roomId);
   const currentHasBattle = hasValidBattleStats(rawBattleStats);
   const previous = roomBattleTracker.get(key);
 
+  // Battle is currently active / valid
   if (currentHasBattle) {
     roomBattleTracker.set(key, {
       lastBattleStats: rawBattleStats,
       saved: false,
+      skipped: false,
+      emptyCount: 0,
       lastSeenAt: Date.now(),
     });
+
     return;
   }
 
-  if (!currentHasBattle && previous?.lastBattleStats && !previous.saved) {
-    if (!isRealPlayedMatch(previous.lastBattleStats)) {
-      roomBattleTracker.set(key, {
-        ...previous,
-        saved: true,
-        skipped: true,
-        skippedAt: Date.now(),
-      });
+  // No valid battle right now, but we never had previous battle data
+  if (!previous?.lastBattleStats) {
+    roomBattleTracker.set(key, {
+      lastBattleStats: null,
+      saved: false,
+      skipped: false,
+      emptyCount: 0,
+      lastSeenAt: Date.now(),
+    });
 
-      apiLogger.info(`⏭️ Skipped cancelled round for room ${key}`);
-      return;
-    }
+    return;
+  }
 
-    const roomInfo = await getRoomInfoByRoomId(key);
-    const payload = buildLiveMatchFromBattleStats(
-      key,
-      previous.lastBattleStats,
-      roomInfo,
+  // Empty response detected
+  const emptyCount = Number(previous.emptyCount || 0) + 1;
+
+  roomBattleTracker.set(key, {
+    ...previous,
+    emptyCount,
+    lastEmptyAt: Date.now(),
+  });
+
+  // Empty response detected
+  if (emptyCount < EMPTY_POLLS_BEFORE_SAVE) {
+    apiLogger.info(
+      `Waiting to confirm battle ended for room ${key} (${emptyCount}/${EMPTY_POLLS_BEFORE_SAVE})`,
     );
+    return;
+  }
 
-    await Match.findOneAndUpdate(
-      { match_uid: payload.match_uid },
-      { $setOnInsert: payload },
-      {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
-      },
+  // Already handled this battle
+  if (previous.saved || previous.skipped) {
+    return;
+  }
+
+  // Cancelled / fake round
+  if (!isRealPlayedMatch(previous.lastBattleStats)) {
+    roomBattleTracker.set(key, {
+      ...previous,
+      saved: true,
+      skipped: true,
+      emptyCount,
+      skippedAt: Date.now(),
+    });
+
+    apiLogger.info(
+      `:black_right_pointing_double_triangle_with_vertical_bar: Skipped cancelled round for room ${key}`,
     );
+    return;
+  }
 
-    await Series.findOneAndUpdate(
-      { room_id: key },
-      {
-        $set: {
-          battle_id: roomInfo?.battle_id,
-          max_bo: roomInfo?.max_bo || 0,
-          cur_bo: roomInfo?.cur_bo || 0,
-          round_results: roomInfo?.round_results || [],
+  const roomInfo = await getRoomInfoByRoomId(key);
 
-          team1: {
-            camp: 1,
-            name: roomInfo?.group_info?.["1"]?.name || "Team 1",
-            mini_name: roomInfo?.group_info?.["1"]?.mini_name || "T1",
-            icon_url: roomInfo?.group_info?.["1"]?.icon_url || "",
-            score: roomInfo?.group_info?.["1"]?.score || 0,
-          },
+  const replaySaveResult = await saveMatchReplay(
+    key,
+    previous.lastBattleStats,
+    roomInfo,
+  );
 
-          team2: {
-            camp: 2,
-            name: roomInfo?.group_info?.["2"]?.name || "Team 2",
-            mini_name: roomInfo?.group_info?.["2"]?.mini_name || "T2",
-            icon_url: roomInfo?.group_info?.["2"]?.icon_url || "",
-            score: roomInfo?.group_info?.["2"]?.score || 0,
-          },
-
-          raw_room_info: roomInfo || null,
-        },
-
-        $addToSet: {
-          matches: payload.match_uid,
-        },
-      },
-      {
-        upsert: true,
-        new: true,
-      },
+  if (!replaySaveResult.saved) {
+    const previousBattleData = getBattleData(previous.lastBattleStats);
+    apiLogger.warn(
+      `Failed to save replay for room ${key}, replay_id ${previousBattleData.replay_id}. Will retry later.`,
     );
 
     roomBattleTracker.set(key, {
       ...previous,
-      saved: true,
-      savedAt: Date.now(),
+      emptyCount,
+      saved: false,
+      waitingReplay: true,
+      lastReplayAttemptAt: Date.now(),
     });
 
-    apiLogger.info(`✅ Saved live battle match: ${payload.match_uid}`);
+    return;
   }
+
+  roomBattleTracker.set(key, {
+    ...previous,
+    saved: true,
+    skipped: false,
+    emptyCount,
+    savedAt: Date.now(),
+  });
+
+  apiLogger.info(
+    `Saved live battle match: ${replaySaveResult.match.match_uid}`,
+  );
 }
+
+// async function saveLiveBattleIfNeeded(roomId, rawBattleStats) {
+//   const key = String(roomId);
+//   const currentHasBattle = hasValidBattleStats(rawBattleStats);
+//   const previous = roomBattleTracker.get(key);
+
+//   // Battle is currently active / valid
+//   if (currentHasBattle) {
+//     roomBattleTracker.set(key, {
+//       lastBattleStats: rawBattleStats,
+//       saved: previous?.saved || false,
+//       skipped: false,
+//       emptyCount: 0,
+//       lastSeenAt: Date.now(),
+//     });
+
+//     return;
+//   }
+
+//   // No valid battle right now, but we never had previous battle data
+//   if (!previous?.lastBattleStats) {
+//     roomBattleTracker.set(key, {
+//       lastBattleStats: null,
+//       saved: false,
+//       skipped: false,
+//       emptyCount: 0,
+//       lastSeenAt: Date.now(),
+//     });
+
+//     return;
+//   }
+
+//   // Empty response detected
+//   const emptyCount = Number(previous.emptyCount || 0) + 1;
+
+//   roomBattleTracker.set(key, {
+//     ...previous,
+//     emptyCount,
+//     lastEmptyAt: Date.now(),
+//   });
+
+//   // Empty response detected
+//   if (emptyCount < EMPTY_POLLS_BEFORE_SAVE) {
+//     apiLogger.info(
+//       `Waiting to confirm battle ended for room ${key} (${emptyCount}/${EMPTY_POLLS_BEFORE_SAVE})`,
+//     );
+//     return;
+//   }
+
+//   // Already handled this battle
+//   if (previous.saved || previous.skipped) {
+//     return;
+//   }
+
+//   // Cancelled / fake round
+//   if (!isRealPlayedMatch(previous.lastBattleStats)) {
+//     roomBattleTracker.set(key, {
+//       ...previous,
+//       saved: true,
+//       skipped: true,
+//       emptyCount,
+//       skippedAt: Date.now(),
+//     });
+
+//     apiLogger.info(
+//       `:black_right_pointing_double_triangle_with_vertical_bar: Skipped cancelled round for room ${key}`,
+//     );
+//     return;
+//   }
+
+//   const roomInfo = await getRoomInfoByRoomId(key);
+
+//   const payload = buildLiveMatchFromBattleStats(
+//     key,
+//     previous.lastBattleStats,
+//     roomInfo,
+//   );
+
+//   await Match.findOneAndUpdate(
+//     { match_uid: payload.match_uid },
+//     { $setOnInsert: payload },
+//     {
+//       upsert: true,
+//       new: true,
+//       setDefaultsOnInsert: true,
+//     },
+//   );
+
+//   await Series.findOneAndUpdate(
+//     { room_id: key },
+//     {
+//       $set: {
+//         battle_id: roomInfo?.battle_id,
+//         max_bo: roomInfo?.max_bo || 0,
+//         cur_bo: roomInfo?.cur_bo || 0,
+//         round_results: roomInfo?.round_results || [],
+
+//         team1: {
+//           camp: 1,
+//           name: roomInfo?.group_info?.["1"]?.name || "Team 1",
+//           mini_name: roomInfo?.group_info?.["1"]?.mini_name || "T1",
+//           icon_url: roomInfo?.group_info?.["1"]?.icon_url || "",
+//           score: roomInfo?.group_info?.["1"]?.score || 0,
+//         },
+
+//         team2: {
+//           camp: 2,
+//           name: roomInfo?.group_info?.["2"]?.name || "Team 2",
+//           mini_name: roomInfo?.group_info?.["2"]?.mini_name || "T2",
+//           icon_url: roomInfo?.group_info?.["2"]?.icon_url || "",
+//           score: roomInfo?.group_info?.["2"]?.score || 0,
+//         },
+
+//         raw_room_info: roomInfo || null,
+//       },
+
+//       $addToSet: {
+//         matches: payload.match_uid,
+//       },
+//     },
+//     {
+//       upsert: true,
+//       new: true,
+//     },
+//   );
+
+//   // await saveBattle(key, latestRoomInfoCache, payload.match_uid, rawBattleStats.replay_id);
+
+//   roomBattleTracker.set(key, {
+//     ...previous,
+//     saved: true,
+//     skipped: false,
+//     emptyCount,
+//     savedAt: Date.now(),
+//   });
+
+//   apiLogger.info(
+//     `Saved live battle match: ${payload.match_uid}`,
+//   );
+// }
 
 function buildPlayerKdaUltFromProcessed(
   player = {},
@@ -574,35 +1211,89 @@ function buildPlayerKdaUltFromProcessed(
   };
 }
 
+function buildXpressionPlayerFromProcessed(player = {}) {
+  return {
+    name: player.playerName || player.name || "-",
+    uid: Number(player.playerId || player.uid || 0),
+
+    hero: {
+      id: Number(player.heroId || 0),
+      name:
+        player.heroMeta?.displayName ||
+        player.heroMeta?.name ||
+        `Hero ${player.heroId || 0}`,
+      role: player.heroMeta?.role || "Unknown",
+    },
+
+    kills: Number(player.kills || 0),
+    deaths: Number(player.deaths || 0),
+    assists: Number(player.assists || 0),
+
+    damage: Number(player.damage || 0),
+    damage_taken: Number(
+      player.damageTaken ||
+        player.damage_taken ||
+        player.raw?.tab_data?.common_data?.total_token_damage ||
+        0,
+    ),
+    healing: Number(player.heal || player.healing || 0),
+
+    hit_rate: Number(player.hitRate || 0),
+
+    solo_kill: Number(player.raw?.solo_kill || 0),
+    last_kill: Number(player.raw?.last_kill || 0),
+    consecutiveKOs: Number(player.raw?.["consecutive KOs"] || 0),
+    continueKillKDA: Number(player.raw?.["continue_kill(KDA)"] || 0),
+
+    hp: Number(player.hp || 0),
+    ult_ratio: Number(player.ultRatio || 0),
+  };
+}
+
 function buildLiveStatsForXpression(processed = {}) {
+  const bluePlayers = processed?.teams?.team1?.players || [];
+  const redPlayers = processed?.teams?.team2?.players || [];
+
+  const mvpId = Number(processed?.mvps?.mvpPlayerId || 0);
+
+  const allPlayers = [...bluePlayers, ...redPlayers];
+
+  const mvpPlayer = allPlayers.find(
+    (player) => Number(player.playerId) === mvpId,
+  );
+
   return {
     Map: {
-      id: processed?.meta?.mapId,
-      name: processed?.meta?.mapName,
-      mode: processed?.meta?.mapMode,
-      fight_time: processed?.meta?.fightTime,
+      id: Number(processed?.meta?.mapId || 0),
+      name: String(processed?.meta?.mapName || "").toUpperCase(),
+      mode: String(processed?.meta?.mapMode || "").toUpperCase(),
     },
 
     Blue: {
-      name: "Blue",
-      short: "BLU",
-      score: processed?.meta?.scoreLeft || 0,
-      summary: processed?.teams?.team1?.summary || {},
-      players: processed?.teams?.team1?.players || [],
+      name: processed?.teams?.team1?.name || "Blue",
+      short: processed?.teams?.team1?.miniName || "BLU",
+      is_win:
+        Number(processed?.meta?.scoreLeft || 0) >
+        Number(processed?.meta?.scoreRight || 0)
+          ? 1
+          : 0,
+      score: Number(processed?.meta?.scoreLeft || 0),
+      players: bluePlayers.map(buildXpressionPlayerFromProcessed),
     },
 
     Red: {
-      name: "Red",
-      short: "RED",
-      score: processed?.meta?.scoreRight || 0,
-      summary: processed?.teams?.team2?.summary || {},
-      players: processed?.teams?.team2?.players || [],
+      name: processed?.teams?.team2?.name || "Red",
+      short: processed?.teams?.team2?.miniName || "RED",
+      is_win:
+        Number(processed?.meta?.scoreRight || 0) >
+        Number(processed?.meta?.scoreLeft || 0)
+          ? 1
+          : 0,
+      score: Number(processed?.meta?.scoreRight || 0),
+      players: redPlayers.map(buildXpressionPlayerFromProcessed),
     },
 
-    MVP: processed?.mvps?.mvpPlayerId || null,
-    SVP: processed?.mvps?.svpPlayerId || null,
-    Objective: processed?.objective || {},
-    updatedAt: Date.now(),
+    MVP: mvpPlayer ? buildXpressionPlayerFromProcessed(mvpPlayer) : null,
   };
 }
 
@@ -618,10 +1309,11 @@ async function pollActiveRoomForXpression() {
 
     const [battleStats, realtimeDraft] = await Promise.all([
       getBattleStatistics(roomId),
-      getRealtimeBanPick(roomId),
+      getRealtimeBanPick(roomId), // optional, only needed if you still use realtime endpoint
     ]);
 
     const rawLiveData = battleStats?.data || battleStats || {};
+    const realtimeData = realtimeDraft?.data || realtimeDraft || {};
 
     await saveLiveBattleIfNeeded(roomId, battleStats);
 
@@ -630,29 +1322,146 @@ async function pollActiveRoomForXpression() {
       mapMap,
     });
 
-    latestBattleCache.set(roomId, processed);
+    const previousProcessed = latestBattleCache.get(roomId);
 
-    await axios.post(`${XPRESSION_BASE}/xpression/stats`, {
-      mode: "live",
-      payload: buildLiveStatsForXpression(processed),
-    });
+    const currentMapId = Number(processed?.meta?.mapId || 0);
+    const previousMapId = Number(previousProcessed?.meta?.mapId || 0);
 
-    // await axios.post(`${XPRESSION_BASE}/xpression/draft`, {
+    const mapChanged = currentMapId > 0 && currentMapId !== previousMapId;
+
+    // const draftItems = Array.isArray(processed?.draft) ? processed.draft : [];
+    // const hasDraft = draftItems.length > 0;
+
+    const draftItems = Array.isArray(realtimeData.ban_pick_info)
+      ? realtimeData.ban_pick_info
+      : Array.isArray(realtimeData.suggest_histories)
+        ? realtimeData.suggest_histories
+        : [];
+
+    if (!hasValidProcessedBattle(processed)) {
+      apiLogger.info(
+        `⏸️ Skipped Xpression update for room ${roomId} because battle data is empty`,
+      );
+      return;
+    }
+
+    // await axios.post(`${SERVER_BASE}/xpression/stats`, {
     //   mode: "live",
-    //   realtime: processed.draft,
+    //   payload: buildLiveStatsForXpression(processed),
     // });
 
-    await axios.post(`${XPRESSION_BASE}/xpression/draft`, {
-      mode: "live",
-      realtime: realtimeDraft,
-      map: {
-        id: processed?.meta?.mapId,
-        name: processed?.meta?.mapName,
-        mode: processed?.meta?.mapMode,
-      }
-    });
+    // apiLogger.info(
+    //   `📤 Xpression stats updated for room ${roomId}, map ${processed?.meta?.mapId}`,
+    // );
+
+    if (mapChanged || draftItems.length > 0) {
+      await axios.post(`${SERVER_BASE}/xpression/draft`, {
+        mode: "live",
+
+        payload: draftItems.map((item) => {
+          const heroId = Number(
+            item.hero_id ??
+              item.heroId ??
+              item.cur_pick_hero ??
+              item.suggest_hero ??
+              0,
+          );
+
+          return {
+            round_index: Number(
+              item.round_index ?? item.roundIndex ?? item.round_idx ?? 0,
+            ),
+
+            operate_type: Number(
+              item.operate_type ?? item.operateType ?? item.is_pick ?? 0,
+            ),
+
+            camp: Number(item.camp || 0),
+
+            battle_side: Number(
+              item.battle_side ??
+                item.battleSide ??
+                item.effect_battle_side ??
+                0,
+            ),
+
+            hero_id: heroId,
+            is_no_selection: heroId === 0,
+          };
+        }),
+
+        map: {
+          id: Number(processed?.meta?.mapId || 0),
+          name: String(processed?.meta?.mapName || "").toUpperCase(),
+          mode: String(processed?.meta?.mapMode || "").toUpperCase(),
+        },
+
+        resetDraft: mapChanged,
+      });
+
+      apiLogger.info(`📤 Xpression draft updated for room ${roomId}`);
+    }
+
+    // if (mapChanged || hasDraft) {
+    //   await axios.post(`${SERVER_BASE}/xpression/draft`, {
+    //     mode: "live",
+
+    //     payload: draftItems.map((item) => ({
+    //       round_index: Number(item.roundIndex ?? item.round_index ?? 0),
+    //       operate_type: Number(item.operateType ?? item.operate_type ?? 0),
+    //       camp: Number(item.camp || 0),
+    //       battle_side: Number(item.battleSide ?? item.battle_side ?? 0),
+    //       hero_id: Number(item.heroId ?? item.hero_id ?? 0),
+    //       is_no_selection: Number(item.heroId ?? item.hero_id ?? 0) === 0,
+    //     })),
+
+    //     map: {
+    //       id: Number(processed?.meta?.mapId || 0),
+    //       name: String(processed?.meta?.mapName || "").toUpperCase(),
+    //       mode: String(processed?.meta?.mapMode || "").toUpperCase(),
+    //     },
+
+    //     resetDraft: mapChanged,
+    //   });
+    //   // await axios.post(`${SERVER_BASE}/xpression/draft`, {
+    //   //   mode: "live",
+
+    //   //   payload: draftItems.map((item) => ({
+    //   //     round_index: Number(item.roundIndex ?? item.round_index ?? 0),
+    //   //     operate_type: Number(item.operateType ?? item.operate_type ?? 0),
+    //   //     camp: Number(item.camp || 0),
+    //   //     battle_side: Number(item.battleSide ?? item.battle_side ?? 0),
+    //   //     hero_id: Number(item.heroId ?? item.hero_id ?? 0),
+    //   //     is_no_selection: Number(item.heroId ?? item.hero_id ?? 0) === 0,
+    //   //   })),
+
+    //   //   map: {
+    //   //     id: Number(processed?.meta?.mapId || 0),
+    //   //     name: String(processed?.meta?.mapName || "").toUpperCase(),
+    //   //     mode: String(processed?.meta?.mapMode || "").toUpperCase(),
+    //   //   },
+
+    //   //   resetDraft: mapChanged, // reset draft display if map changed
+    //   //   // resetTimer: hasDraft,
+    //   // });
+
+    //   apiLogger.info(`📤 Xpression draft updated for room ${roomId}`);
+    // }
+    else {
+      apiLogger.info(
+        `⏸️ Skipped Xpression draft update for room ${roomId} because draft data is empty and map did not change`,
+      );
+    }
+
+    // ✅ Update cache LAST, after both Xpression posts succeed
+    latestBattleCache.set(roomId, processed);
   } catch (err) {
-    apiLogger.error("❌ Failed active room Xpression polling:", err.message);
+    apiLogger.error("❌ Failed active room Xpression polling:", {
+      message: err.message,
+      status: err.response?.status,
+      data: err.response?.data,
+      url: err.config?.url,
+    });
   }
 }
 
@@ -665,7 +1474,7 @@ function startXpressionPolling(roomId) {
 
   pollActiveRoomForXpression();
 
-  xpressionPollTimer = setInterval(pollActiveRoomForXpression, 500);
+  xpressionPollTimer = setInterval(pollActiveRoomForXpression, 800);
 }
 
 /* -----------------------------
@@ -739,8 +1548,6 @@ router.get("/battle/:roomId", async (req, res) => {
     const roomId = String(req.params.roomId);
 
     const battleStats = await getBattleStatistics(roomId);
-
-    await saveLiveBattleIfNeeded(roomId, battleStats);
 
     const rawLiveData = battleStats?.data || battleStats || {};
 

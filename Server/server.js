@@ -32,6 +32,8 @@ app.use('/api/teams', teamRoutes);
 app.use("/api/xpression", xpressionRoutes);
 
 let lastRoom = null; // Store the last room value
+let lastRegion = 'GLOBAL'; // Store the last region value
+let lastTestMatch = false; // Store the last test match value
 
 const http = require("http");
 const server = http.createServer(app);
@@ -49,9 +51,12 @@ io.on("connection", (socket) => {
   serverLogger.info(`User connected: ${socket.id}`);
 
   if (lastRoom) socket.emit('room:sync', lastRoom);
-
+  if (lastRegion) socket.emit('region:sync', lastRegion);
+  if (lastTestMatch) socket.emit('testMatch:sync', lastTestMatch);
   socket.on('init', () => {
     if (lastRoom) socket.emit('room:sync', lastRoom);
+    if (lastRegion) socket.emit('region:sync', lastRegion);
+    if (lastTestMatch) socket.emit('testMatch:sync', lastTestMatch);
   })
 
   socket.on('room:update', (val) => {
@@ -61,6 +66,24 @@ io.on("connection", (socket) => {
 
     lastRoom = val;
     io.emit('room:sync', val);
+  })
+
+  socket.on('region:update', (val) => {
+    if (JSON.stringify(val) !== JSON.stringify(lastRegion)) return;
+
+    serverLogger.info(`Region updated: ${JSON.stringify(val)}`);
+
+    lastRegion = val;
+    io.emit('region:sync', val);
+  })
+
+  socket.on('testMatch:update', (val) => {
+    if (JSON.stringify(val) !== JSON.stringify(lastTestMatch)) return;
+
+    serverLogger.info(`Test match updated: ${JSON.stringify(val)}`);
+
+    lastTestMatch = val;
+    io.emit('testMatch:sync', val);
   })
 
   socket.on("disconnect", () => {

@@ -3,15 +3,21 @@ const routes = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '/', component: () => import('pages/MatchesPage.vue') },
+      { path: '/', component: () => import('pages/RoomPage.vue') },
       { path: '/team', component: () => import('pages/database/TeamManager.vue') },
       { path: '/room', component: () => import('pages/RoomPage.vue') },
       { path: '/matches', component: () => import('pages/MatchesPage.vue') },
       { path: '/draft', component: () => import('pages/XpressionDraftViewer.vue') },
       {
-        path: '/matches/:match_uid',
-        name: 'match-detail',
-        component: () => import('pages/MatchDetailPage.vue'),
+        path: 'matches',
+        children: [
+          { path: '', component: () => import('pages/MatchesPage.vue') },
+          {
+            path: ':match_uid',
+            name: 'match-detail',
+            component: () => import('pages/MatchDetailPage.vue'),
+          },
+        ],
       },
       {
         path: 'live',

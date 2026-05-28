@@ -12,10 +12,6 @@ const insecureAgent = new https.Agent({
 const ROOM_BASE = process.env.MR_GMPROXY_BASE;
 const REPLAY_BASE = process.env.MR_REPLAY_BASE;
 
-// console.log("MR_TOKEN:", MR_TOKEN ? "***" : "Not Set");
-// console.log("ROOM_BASE:", ROOM_BASE);
-// console.log("REPLAY_BASE:", REPLAY_BASE);
-
 async function getRoomList() {
   try {
     const response = await axios.get(`${ROOM_BASE}/room_list`, {
@@ -86,25 +82,56 @@ async function getBattleStatistics(roomId) {
   }
 }
 
-async function getReplayQueryMatch(body) {
-    try {
-    const response = await axios.post(`${REPLAY_BASE}`, {
+// async function getReplayQueryMatch(body) {
+//     try {
+//     const response = await axios.post(`${REPLAY_BASE}`, {
+//       headers: {
+//         Authorization: `Basic ${MR_TOKEN}`,
+//         Accept: "application/json",
+//         "Content-Type": "application/json",
+//       },
+//       body: {
+//         replay_ids: body?.replay_ids || ['50114224938'],
+//       },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error(":x: Marvel API ERROR:", {
+//       url: `${ROOM_BASE}/replay_query_match`,
+//       status: error.response?.status,
+//       data: error.response?.data,
+//       message: error.message,
+//     });
+
+//     throw error;
+//   }
+// }
+
+async function getReplayQueryMatch(body = {}) {
+  try {
+    const payload = {
+      player_uid: Number(body.player_uid),
+      zone_id: Number(body.zone_id || 12001),
+      replay_ids: body.replay_ids || ["50114224938"],
+    };
+
+    const response = await axios.post(REPLAY_BASE, payload, {
       headers: {
         Authorization: `Basic ${MR_TOKEN}`,
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: {
-        replay_ids: body?.replay_ids || ['50114224938'],
-      },
     });
+
     return response.data;
   } catch (error) {
     console.error(":x: Marvel API ERROR:", {
-      url: `${ROOM_BASE}/replay_query_match`,
+      url: REPLAY_BASE,
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,
+      hasToken: Boolean(MR_TOKEN),
+      tokenPreview: MR_TOKEN ? `${String(MR_TOKEN).slice(0, 8)}...` : null,
     });
 
     throw error;

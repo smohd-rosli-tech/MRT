@@ -224,10 +224,10 @@ function getHeroRole(heroId) {
 
   if (id === 10571 && Array.isArray(hero.role))
     return hero.role[0] || "Vanguard";
-    // return hero.role[0] || "Duelist";
+  // return hero.role[0] || "Duelist";
   if (id === 10572 && Array.isArray(hero.role))
     return hero.role[0] || "Duelist";
-    // return hero.role[1] || "Vanguard";
+  // return hero.role[1] || "Vanguard";
   if (id === 10573 && Array.isArray(hero.role))
     return hero.role[2] || "Strategist";
 
@@ -919,15 +919,6 @@ async function saveMatchReplay(roomId, rawBattleStats = {}, roomInfo = null) {
     });
   }
 
-  // await axios.post(`${SERVER_BASE}/xpression/stats`, {
-  //   mode: "live",
-  //   payload: buildReplayStatsForXpression(savedMatch),
-  // });
-
-  // apiLogger.info(
-  //   `📤 Stable replay stats sent to Xpression: ${savedMatch.match_uid}`,
-  // );
-
   return {
     saved: true,
     xpressionStatsSent,
@@ -1043,146 +1034,6 @@ async function saveLiveBattleIfNeeded(roomId, rawBattleStats) {
   );
 }
 
-// async function saveLiveBattleIfNeeded(roomId, rawBattleStats) {
-//   const key = String(roomId);
-//   const currentHasBattle = hasValidBattleStats(rawBattleStats);
-//   const previous = roomBattleTracker.get(key);
-
-//   // Battle is currently active / valid
-//   if (currentHasBattle) {
-//     roomBattleTracker.set(key, {
-//       lastBattleStats: rawBattleStats,
-//       saved: previous?.saved || false,
-//       skipped: false,
-//       emptyCount: 0,
-//       lastSeenAt: Date.now(),
-//     });
-
-//     return;
-//   }
-
-//   // No valid battle right now, but we never had previous battle data
-//   if (!previous?.lastBattleStats) {
-//     roomBattleTracker.set(key, {
-//       lastBattleStats: null,
-//       saved: false,
-//       skipped: false,
-//       emptyCount: 0,
-//       lastSeenAt: Date.now(),
-//     });
-
-//     return;
-//   }
-
-//   // Empty response detected
-//   const emptyCount = Number(previous.emptyCount || 0) + 1;
-
-//   roomBattleTracker.set(key, {
-//     ...previous,
-//     emptyCount,
-//     lastEmptyAt: Date.now(),
-//   });
-
-//   // Empty response detected
-//   if (emptyCount < EMPTY_POLLS_BEFORE_SAVE) {
-//     apiLogger.info(
-//       `Waiting to confirm battle ended for room ${key} (${emptyCount}/${EMPTY_POLLS_BEFORE_SAVE})`,
-//     );
-//     return;
-//   }
-
-//   // Already handled this battle
-//   if (previous.saved || previous.skipped) {
-//     return;
-//   }
-
-//   // Cancelled / fake round
-//   if (!isRealPlayedMatch(previous.lastBattleStats)) {
-//     roomBattleTracker.set(key, {
-//       ...previous,
-//       saved: true,
-//       skipped: true,
-//       emptyCount,
-//       skippedAt: Date.now(),
-//     });
-
-//     apiLogger.info(
-//       `:black_right_pointing_double_triangle_with_vertical_bar: Skipped cancelled round for room ${key}`,
-//     );
-//     return;
-//   }
-
-//   const roomInfo = await getRoomInfoByRoomId(key);
-
-//   const payload = buildLiveMatchFromBattleStats(
-//     key,
-//     previous.lastBattleStats,
-//     roomInfo,
-//   );
-
-//   await Match.findOneAndUpdate(
-//     { match_uid: payload.match_uid },
-//     { $setOnInsert: payload },
-//     {
-//       upsert: true,
-//       new: true,
-//       setDefaultsOnInsert: true,
-//     },
-//   );
-
-//   await Series.findOneAndUpdate(
-//     { room_id: key },
-//     {
-//       $set: {
-//         battle_id: roomInfo?.battle_id,
-//         max_bo: roomInfo?.max_bo || 0,
-//         cur_bo: roomInfo?.cur_bo || 0,
-//         round_results: roomInfo?.round_results || [],
-
-//         team1: {
-//           camp: 1,
-//           name: roomInfo?.group_info?.["1"]?.name || "Team 1",
-//           mini_name: roomInfo?.group_info?.["1"]?.mini_name || "T1",
-//           icon_url: roomInfo?.group_info?.["1"]?.icon_url || "",
-//           score: roomInfo?.group_info?.["1"]?.score || 0,
-//         },
-
-//         team2: {
-//           camp: 2,
-//           name: roomInfo?.group_info?.["2"]?.name || "Team 2",
-//           mini_name: roomInfo?.group_info?.["2"]?.mini_name || "T2",
-//           icon_url: roomInfo?.group_info?.["2"]?.icon_url || "",
-//           score: roomInfo?.group_info?.["2"]?.score || 0,
-//         },
-
-//         raw_room_info: roomInfo || null,
-//       },
-
-//       $addToSet: {
-//         matches: payload.match_uid,
-//       },
-//     },
-//     {
-//       upsert: true,
-//       new: true,
-//     },
-//   );
-
-//   // await saveBattle(key, latestRoomInfoCache, payload.match_uid, rawBattleStats.replay_id);
-
-//   roomBattleTracker.set(key, {
-//     ...previous,
-//     saved: true,
-//     skipped: false,
-//     emptyCount,
-//     savedAt: Date.now(),
-//   });
-
-//   apiLogger.info(
-//     `Saved live battle match: ${payload.match_uid}`,
-//   );
-// }
-
 function buildPlayerKdaUltFromProcessed(
   player = {},
   teamName = "",
@@ -1208,6 +1059,54 @@ function buildPlayerKdaUltFromProcessed(
     },
 
     display: `${teamName} | ${player.playerName} | ${player.kills}/${player.deaths}/${player.assists}`,
+  };
+}
+
+function getLivePlayerSide(player = {}, fallbackSide = "") {
+  const camp = Number(player.camp || player.raw?.camp || 0);
+
+  if (camp === 1) return "blue";
+  if (camp === 2 || camp === 0) return "red";
+
+  return fallbackSide;
+}
+
+function buildCentralLivePlayerPayload(
+  player = {},
+  teamInfo = {},
+  fallbackSide = "",
+) {
+  const ultRatio = Number(player.ultRatio || player.ult_ratio || 0);
+  const ultPercentage = Number((ultRatio * 100).toFixed(1));
+
+  return {
+    playerName: player.playerName || player.name || "-",
+    playerUID: Number(player.playerId || player.uid || 0),
+
+    kill: Number(player.kills || player.k || 0),
+    death: Number(player.deaths || player.d || 0),
+    assist: Number(player.assists || player.a || 0),
+
+    ultPercentage,
+    ultReady: ultPercentage >= 100,
+
+    heroID: Number(player.heroId || player.hero?.id || 0),
+    heroName:
+      player.heroMeta?.displayName ||
+      player.heroMeta?.name ||
+      player.hero?.name ||
+      `Hero ${player.heroId || player.hero?.id || 0}`,
+    heroRole: player.heroMeta?.role || player.hero?.role || "Unknown",
+
+    side: getLivePlayerSide(player, fallbackSide),
+
+    teamName: teamInfo.name || "-",
+    teamShort: teamInfo.short || "-",
+
+    damage: Number(player.damage || 0),
+    healing: Number(player.heal || player.healing || 0),
+    hitRate: Number(player.hitRate || player.hit_rate || 0),
+    hp: Number(player.hp || 0),
   };
 }
 
@@ -1329,9 +1228,6 @@ async function pollActiveRoomForXpression() {
 
     const mapChanged = currentMapId > 0 && currentMapId !== previousMapId;
 
-    // const draftItems = Array.isArray(processed?.draft) ? processed.draft : [];
-    // const hasDraft = draftItems.length > 0;
-
     const draftItems = Array.isArray(realtimeData.ban_pick_info)
       ? realtimeData.ban_pick_info
       : Array.isArray(realtimeData.suggest_histories)
@@ -1345,75 +1241,125 @@ async function pollActiveRoomForXpression() {
       return;
     }
 
-    // await axios.post(`${SERVER_BASE}/xpression/stats`, {
-    //   mode: "live",
-    //   payload: buildLiveStatsForXpression(processed),
-    // });
-
-    // apiLogger.info(
-    //   `📤 Xpression stats updated for room ${roomId}, map ${processed?.meta?.mapId}`,
-    // );
-
+    // NEW FORMAT: directly use realtime draft data if available, to avoid potential issues with battle stats draft parsing
     if (mapChanged || draftItems.length > 0) {
+      const mapPayload = {
+        id: Number(processed?.meta?.mapId || 0),
+        name: String(processed?.meta?.mapName || "").toUpperCase(),
+        mode: String(processed?.meta?.mapMode || "").toUpperCase(),
+      };
+
+      if (mapChanged) {
+        await axios.post(`${SERVER_BASE}/xpression/stats`, {
+          mode: "live",
+          payload: {
+            Map: mapPayload,
+
+            Blue: {
+              name: processed?.teams?.team1?.name || "Team 1",
+              short: processed?.teams?.team1?.short || "T1",
+              is_win: 0,
+              score: Number(processed?.teams?.team1?.score || 0),
+              players: [],
+            },
+
+            Red: {
+              name: processed?.teams?.team2?.name || "Team 2",
+              short: processed?.teams?.team2?.short || "T2",
+              is_win: 0,
+              score: Number(processed?.teams?.team2?.score || 0),
+              players: [],
+            },
+
+            MVP: null,
+
+            meta: {
+              status: "WAITING_FOR_REPLAY_STATS",
+              source: "map_changed",
+              updatedAt: Date.now(),
+            },
+          },
+        });
+
+        apiLogger.info(
+          `🗺️ Xpression stats map updated for room ${roomId}, map ${mapPayload.id}`,
+        );
+      }
+
+      const normalizedDraftPayload = mapChanged
+        ? []
+        : draftItems.map((item) => {
+            const heroId = Number(
+              item.hero_id ??
+                item.heroId ??
+                item.cur_pick_hero ??
+                item.suggest_hero ??
+                0,
+            );
+
+            return {
+              round_index: Number(
+                item.round_index ?? item.roundIndex ?? item.round_idx ?? 0,
+              ),
+              operate_type: Number(
+                item.operate_type ?? item.operateType ?? item.is_pick ?? 0,
+              ),
+              camp: Number(item.camp || 0),
+              battle_side: Number(
+                item.battle_side ??
+                  item.battleSide ??
+                  item.effect_battle_side ??
+                  0,
+              ),
+              hero_id: heroId,
+              is_no_selection: heroId === 0,
+            };
+          });
+
       await axios.post(`${SERVER_BASE}/xpression/draft`, {
         mode: "live",
-
-        payload: draftItems.map((item) => {
-          const heroId = Number(
-            item.hero_id ??
-              item.heroId ??
-              item.cur_pick_hero ??
-              item.suggest_hero ??
-              0,
-          );
-
-          return {
-            round_index: Number(
-              item.round_index ?? item.roundIndex ?? item.round_idx ?? 0,
-            ),
-
-            operate_type: Number(
-              item.operate_type ?? item.operateType ?? item.is_pick ?? 0,
-            ),
-
-            camp: Number(item.camp || 0),
-
-            battle_side: Number(
-              item.battle_side ??
-                item.battleSide ??
-                item.effect_battle_side ??
-                0,
-            ),
-
-            hero_id: heroId,
-            is_no_selection: heroId === 0,
-          };
-        }),
-
-        map: {
-          id: Number(processed?.meta?.mapId || 0),
-          name: String(processed?.meta?.mapName || "").toUpperCase(),
-          mode: String(processed?.meta?.mapMode || "").toUpperCase(),
-        },
-
+        payload: normalizedDraftPayload,
+        map: mapPayload,
         resetDraft: mapChanged,
       });
 
       apiLogger.info(`📤 Xpression draft updated for room ${roomId}`);
     }
 
-    // if (mapChanged || hasDraft) {
+    // if (mapChanged || draftItems.length > 0) {
     //   await axios.post(`${SERVER_BASE}/xpression/draft`, {
     //     mode: "live",
+    //     payload: draftItems.map((item) => {
+    //       const heroId = Number(
+    //         item.hero_id ??
+    //           item.heroId ??
+    //           item.cur_pick_hero ??
+    //           item.suggest_hero ??
+    //           0,
+    //       );
 
-    //     payload: draftItems.map((item) => ({
-    //       round_index: Number(item.roundIndex ?? item.round_index ?? 0),
-    //       operate_type: Number(item.operateType ?? item.operate_type ?? 0),
-    //       camp: Number(item.camp || 0),
-    //       battle_side: Number(item.battleSide ?? item.battle_side ?? 0),
-    //       hero_id: Number(item.heroId ?? item.hero_id ?? 0),
-    //       is_no_selection: Number(item.heroId ?? item.hero_id ?? 0) === 0,
-    //     })),
+    //       return {
+    //         round_index: Number(
+    //           item.round_index ?? item.roundIndex ?? item.round_idx ?? 0,
+    //         ),
+
+    //         operate_type: Number(
+    //           item.operate_type ?? item.operateType ?? item.is_pick ?? 0,
+    //         ),
+
+    //         camp: Number(item.camp || 0),
+
+    //         battle_side: Number(
+    //           item.battle_side ??
+    //             item.battleSide ??
+    //             item.effect_battle_side ??
+    //             0,
+    //         ),
+
+    //         hero_id: heroId,
+    //         is_no_selection: heroId === 0,
+    //       };
+    //     }),
 
     //     map: {
     //       id: Number(processed?.meta?.mapId || 0),
@@ -1423,30 +1369,10 @@ async function pollActiveRoomForXpression() {
 
     //     resetDraft: mapChanged,
     //   });
-    //   // await axios.post(`${SERVER_BASE}/xpression/draft`, {
-    //   //   mode: "live",
-
-    //   //   payload: draftItems.map((item) => ({
-    //   //     round_index: Number(item.roundIndex ?? item.round_index ?? 0),
-    //   //     operate_type: Number(item.operateType ?? item.operate_type ?? 0),
-    //   //     camp: Number(item.camp || 0),
-    //   //     battle_side: Number(item.battleSide ?? item.battle_side ?? 0),
-    //   //     hero_id: Number(item.heroId ?? item.hero_id ?? 0),
-    //   //     is_no_selection: Number(item.heroId ?? item.hero_id ?? 0) === 0,
-    //   //   })),
-
-    //   //   map: {
-    //   //     id: Number(processed?.meta?.mapId || 0),
-    //   //     name: String(processed?.meta?.mapName || "").toUpperCase(),
-    //   //     mode: String(processed?.meta?.mapMode || "").toUpperCase(),
-    //   //   },
-
-    //   //   resetDraft: mapChanged, // reset draft display if map changed
-    //   //   // resetTimer: hasDraft,
-    //   // });
 
     //   apiLogger.info(`📤 Xpression draft updated for room ${roomId}`);
-    // }
+    // } 
+    
     else {
       apiLogger.info(
         `⏸️ Skipped Xpression draft update for room ${roomId} because draft data is empty and map did not change`,
@@ -1597,6 +1523,78 @@ router.post("/replay-query-match", async (req, res) => {
     res.status(500).json({
       message: "Failed to fetch replay query match",
       error: err.message,
+    });
+  }
+});
+
+router.get("/players/:roomId?", (req, res) => {
+  try {
+    const roomId =
+      req.params.roomId ||
+      activeRoomId ||
+      Array.from(latestBattleCache.keys()).pop();
+
+    if (!roomId) {
+      return res.status(404).json({
+        message: "No active room available",
+      });
+    }
+
+    const data = latestBattleCache.get(String(roomId));
+
+    if (!data) {
+      return res.status(404).json({
+        message: "No live data available",
+        roomId,
+      });
+    }
+
+    const roomInfo = latestRoomInfoCache.get(String(roomId)) || {};
+
+    const team1Info = {
+      name:
+        roomInfo.group_info?.["1"]?.name ||
+        data?.teams?.team1?.name ||
+        "Team 1",
+      short:
+        roomInfo.group_info?.["1"]?.mini_name ||
+        data?.teams?.team1?.miniName ||
+        "T1",
+    };
+
+    const team2Info = {
+      name:
+        roomInfo.group_info?.["2"]?.name ||
+        data?.teams?.team2?.name ||
+        "Team 2",
+      short:
+        roomInfo.group_info?.["2"]?.mini_name ||
+        data?.teams?.team2?.miniName ||
+        "T2",
+    };
+
+    const team1Players = data?.teams?.team1?.players || [];
+    const team2Players = data?.teams?.team2?.players || [];
+
+    res.json({
+      roomId: String(roomId),
+      updatedAt: Date.now(),
+
+      Team1: team1Players.map((player, index) => ({
+        index: index + 1,
+        spectateKey: `F${index + 1}`,
+        ...buildCentralLivePlayerPayload(player, team1Info, "blue"),
+      })),
+
+      Team2: team2Players.map((player, index) => ({
+        index: index + 1,
+        spectateKey: `F${index + 7}`,
+        ...buildCentralLivePlayerPayload(player, team2Info, "red"),
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
     });
   }
 });

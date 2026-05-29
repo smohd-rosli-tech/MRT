@@ -93,10 +93,10 @@ function getHeroRole(heroId) {
 
   if (id === 10571 && Array.isArray(hero.role))
     return hero.role[0] || "Vanguard";
-    // return hero.role[0] || "Duelist";
+  // return hero.role[0] || "Duelist";
   if (id === 10572 && Array.isArray(hero.role))
     return hero.role[0] || "Duelist";
-    // return hero.role[1] || "Vanguard";
+  // return hero.role[1] || "Vanguard";
   if (id === 10573 && Array.isArray(hero.role))
     return hero.role[2] || "Strategist";
 
@@ -1018,6 +1018,7 @@ router.post("/draft", async (req, res) => {
 
       const newSignature = getDraftSignature(liveDraftData);
 
+      // NEW FORMAT LOGIC: if resetDraft is true, we reset the draft to blank skeleton and only update the payload if we don't have any live draft data yet (e.g. first request after reset), otherwise we keep the blank skeleton until we detect a new phase start with a different signature, to avoid overwriting new draft data with blank skeleton in case of multiple reset requests or if the client wants to reset timer without resetting draft
       if (resetDraft) {
         lastDraftData = [];
         currentDraftPayload = buildDraft([], {}, true);
@@ -1027,7 +1028,26 @@ router.post("/draft", async (req, res) => {
         xpressionLogger.info(
           ":arrows_counterclockwise: Live draft reset to blank skeleton",
         );
+
+        if (!liveDraftData.length) {
+          return res.json({
+            success: true,
+            mode: "live",
+            reset: true,
+            data: currentDraftPayload,
+          });
+        }
       }
+      // if (resetDraft) {
+      //   lastDraftData = [];
+      //   currentDraftPayload = buildDraft([], {}, true);
+      //   phaseStartedAt = null;
+      //   lastDraftSignature = "";
+
+      //   xpressionLogger.info(
+      //     ":arrows_counterclockwise: Live draft reset to blank skeleton",
+      //   );
+      // }
 
       if (liveDraftData.length > 0 && newSignature !== lastDraftSignature) {
         phaseStartedAt = Date.now();
@@ -1045,63 +1065,6 @@ router.post("/draft", async (req, res) => {
         data: currentDraftPayload,
       });
     }
-
-    /***new live draft handling for avoid changing draft while switching side midgame***/
-  //   if (mode === "live" || payload || realtime) {
-  //     const liveDraftData = payload
-  //       ? normalizeLiveDraftPayload(payload)
-  //       : normalizeRealtimeDraftPayload(realtime || req.body);
-
-  //     /* New map/game: allow reset even if previous draft was complete. */
-  //     if (resetDraft) {
-  //       lastDraftData = [];
-  //       currentDraftPayload = buildDraft([], {}, true);
-  //       phaseStartedAt = null;
-  //       lastDraftSignature = "";
-
-  //       xpressionLogger.info("Live draft reset to blank skeleton");
-  //     }
-
-  //     /*
-  //   Convoy protection:
-  //   Once draft is complete, ignore later live draft updates unless resetDraft is true.
-  //   This prevents mid-game side/camp switching from rebuilding/flipping draft.
-  // */
-  //     if (!resetDraft && Boolean(currentDraftPayload?.meta?.is_complete)) {
-  //       xpressionLogger.info(
-  //         "Live draft ignored because draft is already complete",
-  //       );
-
-  //       return res.json({
-  //         success: true,
-  //         mode: "live",
-  //         ignored: true,
-  //         reason: "Draft already complete; ignoring later side/camp changes",
-  //         data: {
-  //           ...currentDraftPayload,
-  //           Timer: getDraftTimer(),
-  //         },
-  //       });
-  //     }
-
-  //     const newSignature = getDraftSignature(liveDraftData);
-
-  //     if (liveDraftData.length > 0 && newSignature !== lastDraftSignature) {
-  //       phaseStartedAt = Date.now();
-  //       lastDraftSignature = newSignature;
-  //     }
-
-  //     lastDraftData = liveDraftData;
-  //     currentDraftPayload = buildDraft(lastDraftData, {}, true);
-
-  //     xpressionLogger.info("Live draft payload updated for Xpression");
-
-  //     return res.json({
-  //       success: true,
-  //       mode: "live",
-  //       data: currentDraftPayload,
-  //     });
-  //   }
 
     /*
       SAVED MATCH MODE
